@@ -39,7 +39,10 @@ export const auth =  (req:Request, res: Response, next: NextFunction)=>{
 const checkIfTokenIsBarred = async (token: string, uid:string) =>{
     try{
         const tokenValue = await redisClient.get(uid)
-        if(tokenValue) return true;
+        if(tokenValue){
+            if(token === tokenValue)
+                return true;
+        } 
         return false;
     }catch(error){
         console.log("Error at Auth Middleware from redis: ", error);

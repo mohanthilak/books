@@ -1,8 +1,9 @@
 import express, {Application} from "express";
 import cors from 'cors';
 import {Channel} from "amqplib"
-
+import { UserRepository } from "./database";
 import {UserAPI} from "./api/routes/user_api"
+import { UserService } from "./services";
 
 
 export default (app: Application, channel: Channel)=>{
@@ -14,6 +15,9 @@ export default (app: Application, channel: Channel)=>{
         credentials: true,
     }));
 
-    UserAPI(app, channel)
+    const repository = new UserRepository();
+    const service = new UserService(repository)
+
+    UserAPI(app, channel, service)
 
 }

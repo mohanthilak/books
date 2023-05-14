@@ -6,7 +6,7 @@ import { CreateUserInput, createUserSchema, getUserDetailsSchema,  GetUserDetail
 import validateResources from "../middlewares/validateRequest";
 import { Channel } from "amqplib";
 import {SubscribeMessage, PublishMessage} from "../../utils"
-import { USER_BINDING_KEY } from "../../config";
+import { USER_BINDING_KEY, NOTIFICATION_EXCHANGE, NOTIFICATION_BINDING_KEY, COMMON_BINDING_KEY, COMMON_EXCHANGE } from "../../config";
 
 interface user{
         username: string,
@@ -19,14 +19,14 @@ declare global {
       }
     }
   }
-const service = new UserService();
 
-export const UserAPI = (app: Application, channel: Channel)=>{
+export const UserAPI = (app: Application, channel: Channel, service: UserService)=>{
     SubscribeMessage(channel)
 
     app.get("/trial", (req:Request, res: Response)=>{
         console.log("Request Reached");
         res.json({message: "Request Reached"});
+        PublishMessage(channel, NOTIFICATION_BINDING_KEY, JSON.stringify({fromService: "UserService", typeOfNotification:"SMS", body: {userId: "DAFADF", TimeIssued:new Date(), operation:"send_otp"}}), NOTIFICATION_EXCHANGE)
     })
 
     app.post("/signup", validateResources(createUserSchema) ,async (req: Request<{}, {}, CreateUserInput>, res: Response)=>{
@@ -35,10 +35,10 @@ export const UserAPI = (app: Application, channel: Channel)=>{
             const data = await service.SignUp({username, password});
             if(data.created)
                 return res.status(200).json(data);
-            res.json({data, status: 401});
+            res.status(422).json({data});
         }catch(e){
             console.log("Error at api layer", e);
-            return res.json({message: "Username already exists"})
+            return res.status(422).json({message: "Username already exists"})
         }
     })
     
@@ -47,7 +47,9 @@ export const UserAPI = (app: Application, channel: Channel)=>{
         try{
             const {username, password}: signUpInterface = req.body;
             const data = await service.Login({username, password});
-            if(data){
+            
+            if(data.data) return res.status(200).json({message: "Logged In Successfully", accessToken: data.data.AccessToken, refreshToken: data.data.RefreshToken});
+
                 let statusCode = 200;    
                 if(data.err){
                     switch(data.message){
@@ -60,10 +62,7 @@ export const UserAPI = (app: Application, channel: Channel)=>{
                             statusCode = 401;
                             break;
                     }
-                    return res.json({status: statusCode,message: data.message})
-                }
-                if(data.data )
-                return res.json({status: statusCode, message: "Logged In Successfully", accessToken: data.data.accesstoken, refreshToken: data.data.refreshToken});
+                    return res.status(statusCode).json({status: statusCode,message: data.message})
             }
         }catch(e){
             console.log("Error at the API Layer: ", e);
@@ -73,15 +72,15 @@ export const UserAPI = (app: Application, channel: Channel)=>{
 
     app.post("/logout/:uid", async(req: Request, res: Response) =>{
         const refreshTokenToBeDeleted: string = req.body.refreshToken;
-        const accessToken:string = req.body.accessToken;
+        const accessToken: string = req.body.accessToken;
         const {uid} = req.params;
         const data = await service.DeleteRefreshToken(refreshTokenToBeDeleted, uid);
 
         if(!data.error){
-            PublishMessage(channel, USER_BINDING_KEY, JSON.stringify({operation: "debar_user", data: {uid, accessToken}}));
+            PublishMessage(channel, COMMON_BINDING_KEY, JSON.stringify({operation: "debar_user", data: {uid, accessToken}}), COMMON_EXCHANGE);
             res.status(200).json({message: "Refresh Token Deleted"});
         }else{
-            res.status(403).json({message: "Server Error"});
+            res.status(403).json(data);
         }
         
     })
@@ -97,14 +96,14 @@ export const UserAPI = (app: Application, channel: Channel)=>{
         }
     })
     
-    app.get("/", validateResources(getUserDetailsSchema),  auth, async (req:Request<{}, {}, GetUserDetailsInput>, res: Response)=>{
+    app.get("/", auth, async (req:Request<{}, {}, GetUserDetailsInput>, res: Response)=>{
         try{
             if(req.user){
                 const data = await service.GetUser(req.user)
                 if(data.err)
                     return res.json({status: 501, data })
-                else if(data.user)
-                    return res.json({status: 200, data: data.user})
+                else if(data.data)
+                    return res.json({status: 200, data: data.data})
             }else{
                 return res.sendStatus(404).send({message: "User Not Found"})
             }

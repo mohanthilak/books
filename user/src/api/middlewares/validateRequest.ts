@@ -12,7 +12,11 @@ const validateResources = (schema: AnyZodObject) =>
             
             next();
         }catch(e: any){
-            return res.status(400).send(e.error)
+            const messages = e.errors.map((item: any)=>{
+                
+                return {message: item.message}
+            })
+            return res.status(400).json(messages)
         }
     }
 

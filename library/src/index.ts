@@ -4,8 +4,10 @@ import {DBConnect} from "./database"
 import {PORT} from "./config"
 import {CreateChannel, SubscribeMessage} from "./utils"
 import { createClient } from 'redis';
+//export const redisClient = createClient({
+    //url: 'redis://redis:6379'
+  //  });
 export const redisClient = createClient();
-
 
 const startServer = async () =>{
     try{
@@ -13,16 +15,23 @@ const startServer = async () =>{
         
         await DBConnect();    
     
-    redisClient.on('error', (err) => console.log('Redis Client Error', err));
-    await redisClient.connect();
+        await connectRedis()
 
-    const channel = await CreateChannel();
+        redisClient.on("connect", ()=>{
+            console.log("redis connected")
+        })
 
-    await expressApp(app, channel);
+        redisClient.on("error", (err)=>{
+            console.log("redis error", err)
+        })
 
-    SubscribeMessage(channel);
+        const channel = await CreateChannel();
 
-    app.listen(PORT, ()=> console.log(`listening at port: ${PORT}`))
+        await expressApp(app, channel);
+
+        SubscribeMessage(channel);
+
+        app.listen(PORT, ()=> console.log(`ervin at port: ${PORT}`))
 
     }catch(e){
         console.log("!!!!!!!!!!!!!!!", e)
@@ -30,3 +39,37 @@ const startServer = async () =>{
 }
 
 startServer();
+
+async function connectRedis(){
+    // let times = 5;
+    // let jump =false;
+    // while(times>0){
+    //     try{
+    //         await redisClient.connect();
+    //         redisClient.on('connect', ()=>{
+    //             jump = true;
+    //             console.log("redis connected");
+    //         })
+    //         if (jump) break;
+    //         redisClient.on('error', async (err) =>{
+    //             console.log('Redis Client Error', err);
+    //         })
+    //     }catch(e){
+    //         console.log("Error while connecting to redis", e);
+    //         times--;
+    //         await new Promise(res => setTimeout(res, 1000))
+
+    //     }
+        
+    // }
+    await redisClient.connect()
+
+    redisClient.on("connect", ()=>{
+        console.log("redis connected")
+    })
+
+    redisClient.on("error", (err)=>{
+        console.log("redis error", err)
+    })
+
+} 

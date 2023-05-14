@@ -1,14 +1,15 @@
 import amqplib, {Channel, ConsumeMessage} from "amqplib";
 import {HandleMessagesFromBookService} from "./HandleMessages"
 
-import {MESSAGE_BROKER_URL, EXCHANGE_NAME, USER_BINDING_KEY, BINDING_KEY_ARRAY} from "../config"
+import {MESSAGE_BROKER_URL, USER_EXCHANGE, COMMON_EXCHANGE, USER_BINDING_KEY, COMMON_BINDING_KEY} from "../config"
 
 //Create a Channel
 export const  CreateChannel = async ()=>{
     try{
         const connection = await amqplib.connect(MESSAGE_BROKER_URL);
         const channel = await connection.createChannel();
-        await channel.assertExchange(EXCHANGE_NAME, 'direct', {durable: false});
+        await channel.assertExchange(COMMON_EXCHANGE, 'direct', {durable: true});
+        await channel.assertExchange(USER_EXCHANGE, 'direct', {durable: true});
         return channel;
     }catch(e){
         throw e;
@@ -17,9 +18,9 @@ export const  CreateChannel = async ()=>{
 
 
 //Publish Messages
-export const PublishMessage = async (channel:Channel, binding_key: string, message:string)=>{
+export const PublishMessage = async (channel:Channel, binding_key: string, message:string, exchange:string)=>{
     try{
-        await channel.publish(EXCHANGE_NAME, binding_key, Buffer.from(message))
+        await channel.publish(exchange, binding_key, Buffer.from(message))
     }catch(e){
         throw e;
     }
@@ -30,7 +31,8 @@ export const SubscribeMessage = async (channel:Channel)=>{
     try{
         const appQueue = await channel.assertQueue('User_Queue');
 
-        BINDING_KEY_ARRAY.forEach(bindingKey=>channel.bindQueue(appQueue.queue, EXCHANGE_NAME, bindingKey))
+        channel.bindQueue(appQueue.queue, USER_EXCHANGE, USER_BINDING_KEY)
+        channel.bindQueue(appQueue.queue, COMMON_EXCHANGE, COMMON_BINDING_KEY)
 
         channel.consume(appQueue.queue, data=> {
             console.log("received data");

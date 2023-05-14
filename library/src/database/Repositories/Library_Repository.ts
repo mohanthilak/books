@@ -10,7 +10,7 @@ class LibraryRepository{
             const LibraryData = new LibraryModel({owner, location, name});
             await LibraryData.save()
 
-            return {err: null, data:LibraryData, message: "Succefully Created"};
+            return {err: null, data:LibraryData, message: "Succefully Created yess"};
         }catch(e){
             console.log(errorMessage, e);
             

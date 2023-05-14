@@ -1,6 +1,12 @@
 const express = require("express");
 const cors = require("cors");
 const proxy = require("express-http-proxy");
+const {
+  USER_SERVICE_URL,
+  LIBRARY_SERVICE_URL,
+  BOOK_SERVICE_URL,
+  PORT,
+} = require("./config");
 
 const app = express();
 
@@ -17,8 +23,8 @@ app.use("/user", (req, res, next) => {
   console.log("user route hit the gatewat");
   next();
 });
-app.use("/user", proxy("http://localhost:4001"));
-app.use("/library", proxy("http://localhost:4002"));
-app.use("/books", proxy("http://locahost:4002"));
+app.use("/user", proxy(USER_SERVICE_URL));
+app.use("/library", proxy(LIBRARY_SERVICE_URL));
+app.use("/books", proxy(LIBRARY_SERVICE_URL));
 
-app.listen(4000, () => console.log("Gateway listening at port: ", 4000));
+app.listen(PORT, () => console.log("Gateway listening at port: ", PORT));

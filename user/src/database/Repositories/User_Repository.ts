@@ -1,88 +1,97 @@
-import {UserModel, User} from "../Models/user";
+import {UserModel ,User} from "../Models/user";
 import {RefreshTokensModel} from "../Models/refreshToken"
-import {updateLocationInterface} from "../../dto"
-class UserRepository {
+import { AddlibraryReturn, AddRefreshTokenReturn, DeleteRefreshTokenReturn, FindRefreshTokenReturn, GetPasswordReturn, GetUserWithUsernameReturn, signUpInterface, signUpInterfaceReturn } from "../../dto";
+
+export interface UserRepositoryInterface {
+    CreateUser( inputs: signUpInterface): Promise<signUpInterfaceReturn>
+    GetPasswordWithUsernameAndID({username, password}: signUpInterface): Promise<GetPasswordReturn>
+    DeleteRefreshToken(refreshTokenToBeDeleted:string, uid:string): Promise<DeleteRefreshTokenReturn>
+    GetUserWithUsername({username, _id}:{username: string, _id: string}): Promise<GetUserWithUsernameReturn>
+    AddRefreshToken(token:string, uid:string): Promise<AddRefreshTokenReturn>
+    FindRefreshToken(token:string, uid:string): Promise<FindRefreshTokenReturn>
+    Addlibrary(uid:string, lid:string): Promise<AddlibraryReturn>
+}
+
+
+class UserRepository implements UserRepositoryInterface {
     
-    async CreateUser(inputs: Partial<User>){
+    async CreateUser(inputs: signUpInterface): Promise<signUpInterfaceReturn>{
         try{
             const user= new UserModel(inputs);
             await user.save();
             
             console.log("user create!", user.username)
-            
-            return {created: true, user, message: "Successfully Created"};
+            const data = {username: user.username, _id: user._id}
+            return {created: true, data, message: "Successfully Created"};
 
         }catch(e: any){
             if(e.code == 11000){
                 console.log("Username Already Exists")
-                return {created: false, user: false, message: "Username Already Exists"};
+                return {created: false, data: null, message: "Username Already Exists"};
             }
             console.log("Error while creating user", e)
-            return {created: false, user: false, message: "Server Error"};
+            return {created: false, data: null, message: e.message};
         }
     }
 
-    async GetPassword({username, password}: Partial<User>){
+    async GetPasswordWithUsernameAndID({username, password}: signUpInterface): Promise<GetPasswordReturn>{
         try{
             const data = await UserModel.findOne({username}).select("password _id");
             if(data){
-                if(password){
-                    const userIsValid = await data.validatePassword(password)
-                    if(userIsValid)
-                        return {err: false, data, message: "Authenticated" };
-                    else 
-                        return {err: true, data: null, message: "Username/Password Incorrect"}
-                }
+                const userIsValid = await data.validatePassword(password)
+                if(userIsValid)
+                    return {err: false, data, message: "Authenticated" };
+                else 
+                    return {err: true, data: null, message: "Username/Password Incorrect"}
             }else{             
                 return {err: true, data: null, message: "username not found"};
             }
-        }catch(e){
+        }catch(e:any){
             console.log("Error at the repository layer: ", e);
-            return {err: e,data: null, message: "Server Error"}
+            return {err: true,data: null, message: e.message}
         }
     }
     
-    async DeleteRefreshToken(refreshTokenToBeDeleted:string, uid:string){
+    async DeleteRefreshToken(refreshTokenToBeDeleted:string, uid:string):Promise<DeleteRefreshTokenReturn>{
         try{
             const data = await RefreshTokensModel.findOneAndDelete({refreshToken: refreshTokenToBeDeleted, user: uid});
-            console.log(data);
+            console.log("refreshToken:", data);
             if(data)
             return {error: null};
             else
-            return {error: "Server Error"};
+            return {error: "Invalid Refresh Token"};
         }catch(error){
             console.log("Error at User Repository Layer",error);
             return {error}
         }
     }
 
-    async GetUserWithUsername({username, _id}:{username: string, _id: string}){
+    async GetUserWithUsername({username, _id}:{username: string, _id: string}): Promise<GetUserWithUsernameReturn>{
         try{
             let user = await UserModel.findOne({ username, _id }).select("-password").lean();
-            console.log(username,_id,user);
             if(user)
-            console.log(user.username)
-            if(user)
-                return {err: false, user};
+                return {err: false, userExists: true, data:{username: user.username, _id:user._id, libraries:user.libraries, roles: user.roles}, message: "Successfully Retrived details"};
             else
-                throw 'user does not exits';
-        }catch(e){
+                throw {message: 'user does not exits'};
+        }catch(e:any){
             console.log("Error at the repository layer: ", e);
-            return {err: true, userExists: false, user: false};
+            return {err: true, userExists: false, data: null, message: e.message};
         }
     }
 
-    async AddRefreshToken(token:string, uid:string){
+    async AddRefreshToken(token:string, uid:string):Promise<AddRefreshTokenReturn>{
         try{
             console.log("Adding REfresh Token");
             const refreshToken = new RefreshTokensModel({refreshToken: token, user: uid});
             await refreshToken.save();
+            return {error:false}
         }catch(e){
             console.log("Error at the User Repository Layer", e);
+            return {error: true}
         }
     }
 
-    async FindRefreshToken(token:string, uid:string){
+    async FindRefreshToken(token:string, uid:string): Promise<FindRefreshTokenReturn>{
         try{
             const refreshtoken = await RefreshTokensModel.findOne({refreshToken: token, user: uid});
             console.log(refreshtoken)
@@ -93,10 +102,23 @@ class UserRepository {
             }
         }catch(e){
             console.log("Error at User Repository Layer", e);
-            return {err: e, data: null, message: "Token not found"}
+            return {err: true, data: null, message: "Token not found"}
         }
     }
 
+    async Addlibrary(uid:string, lid:string): Promise<AddlibraryReturn>{
+        try{
+            const user = await UserModel.findById(uid);
+            if(user){
+                user.libraries.push(lid);
+                user.save()
+            }
+            return {err: false, message: "Successful"}
+        }catch(e){
+            console.log("Error at User Repository layer", e);
+            return {err: true, message: "server error"};
+        }
+    }
 
 
     // async UpdateLocation(inputs: updateLocationInterface){
@@ -148,25 +170,6 @@ class UserRepository {
     //         return e
     //     }
     // } 
-
-
-
-
-    async Addlibrary(uid:string, lid:string){
-        try{
-            const user = await UserModel.findById(uid);
-            if(user){
-                user.libraries.push(lid);
-                user.save()
-            }
-            return {err: null, data:user, message: "Successful"}
-        }catch(e){
-            console.log("Error at User Repository layer", e);
-            return {err: e, data: null, message: "server error"};
-        }
-    }
-
-
 }   
 
 export {UserRepository}

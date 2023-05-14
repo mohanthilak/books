@@ -1,10 +1,10 @@
-FROM node
+FROM node:alpine
 
 WORKDIR /app/library
 
-COPY package.json .
+COPY package*.json .
 
-RUN npm install
+RUN npm ci
 
 COPY . .
 

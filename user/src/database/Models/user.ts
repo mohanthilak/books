@@ -1,4 +1,4 @@
-import { DocumentType, getModelForClass, modelOptions, pre, prop,Ref, Severity } from "@typegoose/typegoose";
+import { DocumentType, getModelForClass, modelOptions, pre, prop,Ref, Severity, ReturnModelType } from "@typegoose/typegoose";
 import bcrypt from "bcrypt";
 // import {Library} from "./library"
 
@@ -27,7 +27,7 @@ export class User {
     password: string
 
     @prop()
-    roles:[string];
+    roles:string[];
 
     @prop()
     libraries: string[]; 
@@ -42,6 +42,7 @@ export class User {
    }
 }
 
-const UserModel = getModelForClass(User);
+const UserModel = getModelForClass<typeof User>(User);
+
 
 export {UserModel};

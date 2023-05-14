@@ -2,7 +2,7 @@ import { Channel } from "amqplib";
 import { LibraryRepository } from "../database";
 import { Library} from "../database/Models";
 import {PublishMessage} from "../utils";
-import {USER_BINDING_KEY} from "../config"
+import {USER_BINDING_KEY, USER_EXCHANGE} from "../config"
 
 class LibraryService{
     
@@ -17,7 +17,7 @@ class LibraryService{
        try{
         const data = await this.LibRepo.CreateLibrary({owner, location, name});
         
-        if(data.data && owner) PublishMessage(channel, USER_BINDING_KEY, JSON.stringify({operation:"AddLibraryToUser", data: {userId: owner, libraryId: data.data._id}}))
+        if(data.data && owner) PublishMessage(channel, USER_BINDING_KEY, JSON.stringify({operation:"AddLibraryToUser", data: {userId: owner, libraryId: data.data._id}}), USER_EXCHANGE)
         
         return data;
        }catch(e){
