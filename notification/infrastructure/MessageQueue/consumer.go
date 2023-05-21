@@ -7,7 +7,7 @@ import (
 )
 
 func (mb *MessageBroker) Consumer() {
-	conn, err := amqp.Dial("amqps://mrefwkxt:7a63eI5iVqdd5HRtOEwH6V7ZKE3HvvrU@puffin.rmq2.cloudamqp.com/mrefwkxt")
+	conn, err := amqp.Dial("amqps://xpzfimfo:r9awQJBvXonsgv7YtXAgolBly1BrlwIf@puffin.rmq2.cloudamqp.com/xpzfimfo")
 	FailOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 

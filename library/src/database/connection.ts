@@ -11,7 +11,7 @@ export const DBConnect = async ()=>{
         }catch(e){
             console.log("DB Connection Error", e);
             times--;
-            await new Promise(res => setTimeout(res, 1000))
+            await new Promise(res => setTimeout(res, 2000))
         }
     }
 }

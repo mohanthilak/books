@@ -21,7 +21,7 @@ import (
 func main() {
 	sm := mux.NewRouter()
 
-	MessageQueue.ConnectMessageQueue("amqps://mrefwkxt:7a63eI5iVqdd5HRtOEwH6V7ZKE3HvvrU@puffin.rmq2.cloudamqp.com/mrefwkxt")
+	MessageQueue.ConnectMessageQueue("amqps://xpzfimfo:r9awQJBvXonsgv7YtXAgolBly1BrlwIf@puffin.rmq2.cloudamqp.com/xpzfimfo")
 	db := DataStore.ConnectDB("root:miawallace@tcp(127.0.0.1:3306)/notification_service")
 
 	dao := repository.NewDao(db)

@@ -11,8 +11,8 @@ const PORT = process.env.PORT;
 const USER_SERVICE_URL = process.env.USER_SERVICE_URL;
 const LIBRARY_SERVICE_URL = process.env.LIBRARY_SERVICE_URL;
 const BOOK_SERVICE_URL = process.env.BOOK_SERVICE_URL;
-console.log("port:", PORT);
-module.export = {
+
+module.exports = {
   PORT,
   USER_SERVICE_URL,
   LIBRARY_SERVICE_URL,
