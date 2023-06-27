@@ -93,6 +93,7 @@ class UserRepository implements UserRepositoryInterface {
 
     async FindRefreshToken(token:string, uid:string): Promise<FindRefreshTokenReturn>{
         try{
+            console.log(token, uid);
             const refreshtoken = await RefreshTokensModel.findOne({refreshToken: token, user: uid});
             console.log(refreshtoken)
             if(refreshtoken){

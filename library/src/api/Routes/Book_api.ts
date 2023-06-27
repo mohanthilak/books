@@ -35,7 +35,7 @@ export const BooksAPI = (app:Application, channel: Channel)=>{
         return res.status(200).json({data: data.data, message: data.message});
     })
 
-    
+
     app.get("/book/search/:stringInput/:latitude/:longitude", async(req:Request, res:Response)=>{
         
         const {stringInput, latitude, longitude} = req.params;

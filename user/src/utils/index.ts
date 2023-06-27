@@ -1,5 +1,14 @@
-import amqplib, {Channel, ConsumeMessage} from "amqplib";
+import amqplib, {Channel} from "amqplib";
 import {HandleMessagesFromBookService} from "./HandleMessages"
+
+/**
+ * Exchange is this entry point of the producers. The producers most oftenly produce the message to the exchange and forget about it. 
+ * The message is then push to the respective queues based on the binding key.
+ */
+/**
+ * Common Exchange is used to share messages to all services. 
+ * For example: debaring a user after the user logs out.
+ */
 
 import {MESSAGE_BROKER_URL, USER_EXCHANGE, COMMON_EXCHANGE, USER_BINDING_KEY, COMMON_BINDING_KEY} from "../config"
 
@@ -12,6 +21,7 @@ export const  CreateChannel = async ()=>{
         await channel.assertExchange(USER_EXCHANGE, 'direct', {durable: true});
         return channel;
     }catch(e){
+        console.log("Error while connecting to Message Queue", e)
         throw e;
     }
 }

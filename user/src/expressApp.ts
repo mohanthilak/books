@@ -15,6 +15,10 @@ export default (app: Application, channel: Channel)=>{
         credentials: true,
     }));
 
+    app.use((req, res, next)=>{
+        console.log(req.url);
+        next();
+    })
     const repository = new UserRepository();
     const service = new UserService(repository)
 

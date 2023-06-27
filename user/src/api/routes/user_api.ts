@@ -2,11 +2,11 @@ import {Application, Request, Response} from "express";
 import {UserService} from "../../services";
 import {auth} from "../middlewares";
 import { signUpInterface} from "../../dto"
-import { CreateUserInput, createUserSchema, getUserDetailsSchema,  GetUserDetailsInput} from "../../Schema/User.schema";
+import { CreateUserInput, createUserSchema,  GetUserDetailsInput} from "../../Schema/User.schema";
 import validateResources from "../middlewares/validateRequest";
 import { Channel } from "amqplib";
 import {SubscribeMessage, PublishMessage} from "../../utils"
-import { USER_BINDING_KEY, NOTIFICATION_EXCHANGE, NOTIFICATION_BINDING_KEY, COMMON_BINDING_KEY, COMMON_EXCHANGE } from "../../config";
+import { COMMON_BINDING_KEY, COMMON_EXCHANGE } from "../../config";
 
 interface user{
         username: string,
@@ -25,8 +25,9 @@ export const UserAPI = (app: Application, channel: Channel, service: UserService
 
     app.get("/trial", (req:Request, res: Response)=>{
         console.log("Request Reached");
-        res.json({message: "Request Reached"});
-        PublishMessage(channel, NOTIFICATION_BINDING_KEY, JSON.stringify({fromService: "UserService", typeOfNotification:"SMS", body: {userId: "DAFADF", TimeIssued:new Date(), operation:"send_otp"}}), NOTIFICATION_EXCHANGE)
+        // res.json({message: "Request Reached"});
+        res.send("all good")
+        // PublishMessage(channel, NOTIFICATION_BINDING_KEY, JSON.stringify({fromService: "UserService", typeOfNotification:"SMS", body: {userId: "DAFADF", TimeIssued:new Date(), operation:"send_otp"}}), NOTIFICATION_EXCHANGE)
     })
 
     app.post("/signup", validateResources(createUserSchema) ,async (req: Request<{}, {}, CreateUserInput>, res: Response)=>{
