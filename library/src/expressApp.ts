@@ -1,11 +1,14 @@
 import express, {Application} from "express";
 import cors from 'cors';
-import {Channel} from "amqplib"
+import {CreateChannel, SubscribeMessage} from "./Infra/MeessageQueue/MessageQueue"
 
 import {LibraryAPI} from "./api/Routes/Library_api"
 import {BooksAPI} from "./api/Routes/Book_api"
+import { RepositoryDependency, ServiceDependency } from "./dependencyClass";
+import { BooksService, LibraryService } from "./services";
+import { BooksRepository, LibraryRepository } from "./database";
 
-export default (app: Application, channel: Channel)=>{
+export default async (app: Application)=>{
     app.use(express.json());
     app.use(express.urlencoded({extended: true}));
     app.use(cors({
@@ -13,7 +16,19 @@ export default (app: Application, channel: Channel)=>{
         methods: ['GET', 'POST'],
         credentials: true,
     }));
+    const channel = await CreateChannel();
 
-    BooksAPI(app, channel);
-    LibraryAPI(app, channel);
+    
+    const booksRepository = new BooksRepository();
+    const libraryRepository = new LibraryRepository();
+    const rd = new RepositoryDependency(booksRepository, libraryRepository);
+    
+    const booksService = new BooksService(booksRepository, libraryRepository);
+    const libraryService = new LibraryService(libraryRepository);
+    const sd = new ServiceDependency(booksService, libraryService);
+    SubscribeMessage(channel, sd, rd);
+    
+
+    BooksAPI(app, channel, sd);
+    LibraryAPI(app, channel, sd);
 }

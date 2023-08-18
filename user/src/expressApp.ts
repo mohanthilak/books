@@ -1,12 +1,13 @@
 import express, {Application} from "express";
 import cors from 'cors';
-import {Channel} from "amqplib"
 import { UserRepository } from "./database";
 import {UserAPI} from "./api/routes/user_api"
 import { UserService } from "./services";
+import {CreateChannel, SubscribeMessage} from "./utils"
+import { RepositoryDependency, ServiceDependency } from "./dependencyClass";
 
 
-export default (app: Application, channel: Channel)=>{
+export default async (app: Application )=>  {
     app.use(express.json());
     app.use(express.urlencoded({extended: true}));
     app.use(cors({
@@ -19,8 +20,17 @@ export default (app: Application, channel: Channel)=>{
         console.log(req.url);
         next();
     })
+
+    const channel = await CreateChannel();
+
+
+    
     const repository = new UserRepository();
-    const service = new UserService(repository)
+    const service = new UserService(repository);
+    
+    const SD = new ServiceDependency(service);
+    const RD = new RepositoryDependency(repository);
+    SubscribeMessage(channel, SD, RD);
 
     UserAPI(app, channel, service)
 

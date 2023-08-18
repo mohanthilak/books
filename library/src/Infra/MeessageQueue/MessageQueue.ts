@@ -1,8 +1,9 @@
 import amqplib, {Channel, ConsumeMessage} from "amqplib";
 
-import {HandleMessagesFromBroker} from "./HandleMessages"
+import {HandleMessagesFromBroker, MessageHandline} from "./HandleMessages"
 
-import {MESSAGE_BROKER_URL, LIBRARY_EXCHANGE, QUEUE_NAME, COMMON_EXCHANGE, LIBRARY_BINDING_KEY, COMMON_BINDING_KEY} from "../config"
+import {MESSAGE_BROKER_URL, LIBRARY_EXCHANGE, QUEUE_NAME, COMMON_EXCHANGE, LIBRARY_BINDING_KEY, COMMON_BINDING_KEY} from "../../config"
+import { RepositoryDependency, ServiceDependency } from "../../dependencyClass";
 
 //Create a Channel
 export const  CreateChannel = async ()=>{
@@ -29,21 +30,21 @@ export const PublishMessage = async (channel:Channel, binding_key: string, messa
 }
 
 //Subscribe to Messages
-export const SubscribeMessage = async (channel:Channel)=>{
+export const SubscribeMessage = async (channel:Channel, sd:ServiceDependency, rd: RepositoryDependency)=>{
     try{
         const appQueue = await channel.assertQueue(QUEUE_NAME);
 
         channel.bindQueue(appQueue.queue, LIBRARY_EXCHANGE, LIBRARY_BINDING_KEY)
         channel.bindQueue(appQueue.queue, COMMON_EXCHANGE, COMMON_BINDING_KEY)
-
+        const messageHandling = new MessageHandline(sd, rd);
         channel.consume(appQueue.queue, data=> {
             console.log("received data");
             if(data){
                 const parsedData = JSON.parse(data.content.toString())
                 console.log(parsedData);
-           
+                messageHandling.HandleMessage(parsedData);
                 channel.ack(data);
-		        HandleMessagesFromBroker(parsedData)
+		        // HandleMessagesFromBroker(parsedData)
             };  
         })
     }catch(e){

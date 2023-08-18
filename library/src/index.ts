@@ -2,7 +2,6 @@ import express, {Application} from "express";
 import expressApp from "./expressApp";
 import {DBConnect} from "./database"
 import {PORT} from "./config"
-import {CreateChannel, SubscribeMessage} from "./utils"
 import { createClient } from 'redis';
 // export const redisClient = createClient({
 //     url: 'redis://redis:6379'
@@ -25,11 +24,8 @@ const startServer = async () =>{
             console.log("redis error", err)
         })
 
-        const channel = await CreateChannel();
-
-        await expressApp(app, channel);
-
-        SubscribeMessage(channel);
+        expressApp(app);
+        
 
         app.listen(PORT, ()=> console.log(`ervin at port: ${PORT}`))
 

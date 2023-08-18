@@ -11,7 +11,9 @@ if(process.env.NODE_ENV !== 'prod'){
 
 export const PORT= <string>process.env.PORT;
 export const DBURL = <string>process.env.DBURL;
-export const SECRET = <string>process.env.SECRET;
+export const ACCESS_TOKEN_SECRET = <string>process.env.ACCESS_TOKEN_SECRET;
+
+// export const ACCESS_TOKEN_SECRET = <string>process.env.REFRESH_TOKEN_SECRET;
 export const MESSAGE_BROKER_URL = <string>process.env.MESSAGE_BROKER_URL;
 
 export const COMMON_EXCHANGE = "COMMON_EXCHANGE";
@@ -30,4 +32,4 @@ export const QUEUE_NAME = 'Library_Queue';
 
 
 
-console.log("At config level. PORT: ", PORT, " DBURL: ", DBURL);
+console.log("At config level. PORT: ", PORT, " DBURL: ", DBURL, "accesstokensecrest", ACCESS_TOKEN_SECRET);

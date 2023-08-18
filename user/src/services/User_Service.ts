@@ -27,6 +27,15 @@ class UserService{
         }
     }
 
+    async GetAllUsers(){
+        try{
+            return this.repository.GetALLUsers();
+        }catch(e){
+            console.log("Error at user service layer", e);
+            return {success: false, data: null, error: e};
+        }
+    }
+
     async Login(userInputs: signUpInterface){
         try{
             const data = await this.repository.GetPasswordWithUsernameAndID(userInputs)

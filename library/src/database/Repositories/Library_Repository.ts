@@ -3,7 +3,7 @@ import {Library, LibraryModel} from "../Models"
 const errorMessage = "Error occured at Library Repository Layer";
 
 class LibraryRepository{
-
+    
     async CreateLibrary({owner, location, name}: Partial<Library>){
 
         try{
@@ -16,7 +16,7 @@ class LibraryRepository{
             
             return {err: e, data: null, message:"Server Error"};
         }
-
+        
     }
 
     async AddBookToLibrary(bookId: string, libId: string){
@@ -54,7 +54,16 @@ class LibraryRepository{
         }
     }
     
-   
+    async GetAllLibraries() {
+        try{
+            const libraries = await LibraryModel.find({});
+            return {success: true, data: libraries, error:null}
+        }catch(e){
+            console.log('Error at library repository layer', e);
+            return {success: false, data: null, error: e}
+        }
+    }
+    
     
 }
 

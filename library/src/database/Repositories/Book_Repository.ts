@@ -1,9 +1,35 @@
 import {BookModel, Book} from "../Models";
-import {AddBooksAPIInterface} from "../../dto"
+import {AddBooksAPIInterface, RequestBorrowBookInterface} from "../../dto"
 
 const errorMessage = "Error occured at Books Repository Layer: ";
 
 class BooksRepository{
+
+    async GetAllBooks() {
+        try{
+            const books = await BookModel.find({}).lean();
+            return {success: true, data: books, error: null};
+        }catch(e){
+            console.log("Error at Books Repository layer", e);
+            return {success: false, data: null, error: e};
+        }
+    }
+    async BorrowRequest({ book_id, timestamp, uid }:RequestBorrowBookInterface) {
+        try{
+            const data = await BookModel.findById(book_id);
+            if(data){
+                const obj = {user: uid, timestamp}
+                data.borrowRequest.push(obj);
+                await data.save();
+                return {success: true, data, error: null}
+            } else{
+                return {success: false, data: null, error: "Book ID invalid"}
+            }
+        }catch(e){
+            console.log('Error at Books Repository', e);
+            return {success: false, data: null, error: e};
+        }
+    }
 
     async AddSingleBook(obj: AddBooksAPIInterface){
 

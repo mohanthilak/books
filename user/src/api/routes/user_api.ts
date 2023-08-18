@@ -20,13 +20,18 @@ declare global {
     }
   }
 
-export const UserAPI = (app: Application, channel: Channel, service: UserService)=>{
-    SubscribeMessage(channel)
 
-    app.get("/trial", (req:Request, res: Response)=>{
-        console.log("Request Reached");
-        // res.json({message: "Request Reached"});
-        res.send("all good")
+export const UserAPI = (app: Application, channel: Channel, service: UserService)=>{
+    // SubscribeMessage(channel)
+    let i =0;
+    app.get("/trial", async (req:Request, res: Response)=>{
+        console.log(++i)
+        let data = await service.GetAllUsers();
+        if(data?.success) {
+            return res.json({...data, statusCode: 200}); 
+        }else{
+            return res.json({...data, statusCode: 500});
+        }
         // PublishMessage(channel, NOTIFICATION_BINDING_KEY, JSON.stringify({fromService: "UserService", typeOfNotification:"SMS", body: {userId: "DAFADF", TimeIssued:new Date(), operation:"send_otp"}}), NOTIFICATION_EXCHANGE)
     })
 

@@ -1,0 +1,99 @@
+# "AccessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Ik1vaGFuVGhpbGFrIiwiX2lkIjoiNjRkYjNiYjQxNDgwMDQyYzdhNWQxOWJjIiwiaWF0IjoxNjkyMzQxNDg3LCJleHAiOjE2OTIzNDMyODd9.36SJXI9JfR98UuJF7hnjJG3V5okdrF8wIT84wRrh364",
+# "RefreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Ik1vaGFuVGhpbGFrIiwiX2lkIjoiNjRkYjNiYjQxNDgwMDQyYzdhNWQxOWJjIiwiaWF0IjoxNjkyMDg5MjY5fQ.fO1FKuWuqcl1rL_lUSzhKOm7aUolPjoyuS0fb_I4qVs",
+
+POST http://localhost:4000/user 
+Content-Type: application/json
+
+{
+    "name": "hahah"
+}
+
+###
+GET http://localhost:4000/user/trial HTTP/1.1
+
+###
+Post http://localhost:4000/user/signup
+Content-Type: application/json
+
+{
+    "username": "MohanThilak",
+    "password":"123456789"
+}
+
+###
+POST http://localhost:4000/user/renewtoken HTTP/1.1
+Content-Type: application/json
+
+{
+    "uid":"64db3bb41480042c7a5d19bc",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Ik1vaGFuVGhpbGFrIiwiX2lkIjoiNjRkYjNiYjQxNDgwMDQyYzdhNWQxOWJjIiwiaWF0IjoxNjkyMzQxNDg3LCJleHAiOjE2OTIzNDMyODd9.36SJXI9JfR98UuJF7hnjJG3V5okdrF8wIT84wRrh364"
+}
+
+#####################################################################  LIBRARY  #####################################################################
+
+POST http://localhost:4000/book/book/request-borrow
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Ik1vaGFuVGhpbGFrIiwiX2lkIjoiNjRkYjNiYjQxNDgwMDQyYzdhNWQxOWJjIiwiaWF0IjoxNjkyMzQxNDg3LCJleHAiOjE2OTIzNDMyODd9.36SJXI9JfR98UuJF7hnjJG3V5okdrF8wIT84wRrh364
+
+{
+    "timestamp": 1692099307,
+    "book_id": "64db5e68cf1cef5441b6af2f"
+}
+
+###
+GET http://localhost:4000/book/book/all
+
+###
+POST http://localhost:4000/book/book/add/64db5c27cf1cef5441b6af2a HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Ik1vaGFuVGhpbGFrIiwiX2lkIjoiNjRkYjNiYjQxNDgwMDQyYzdhNWQxOWJjIiwiaWF0IjoxNjkyMzQxNDg3LCJleHAiOjE2OTIzNDMyODd9.36SJXI9JfR98UuJF7hnjJG3V5okdrF8wIT84wRrh364
+
+{
+    "name": "Blooming Dale",
+    "author": "Rachel Green",
+    "mrp": 225,
+    "priceOfBorrowing": 12,
+    "location": {
+        "type": "Point",
+        "coordinates": ["13.036693","77.608116"]
+    }
+}
+
+###
+GET http://localhost:4000/library/library/all
+
+###
+POST http://localhost:4000/library/library/create HTTP/1.1
+Content-Type: application/json 
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Ik1vaGFuVGhpbGFrIiwiX2lkIjoiNjRkYjNiYjQxNDgwMDQyYzdhNWQxOWJjIiwiaWF0IjoxNjkyMDk3MTc4LCJleHAiOjE2OTIwOTg5Nzh9.NXAeOdVRVs6qHdw6UVot83mqy-dUhHngNihvkQhptIs
+
+{
+    "location": {
+        "type": "Point",
+        "coordinates": ["13.036693","77.608116"]
+    },
+    "name": "Budding Trees"
+}
+### {
+#     "_id": "64db5c27cf1cef5441b6af2a",
+#     "name": "Budding Trees",
+#     "owner": "64db3bb41480042c7a5d19bc",
+#     "books": [],
+#     "location": {
+#     "type": "Point",
+#     "coordinates": [
+#         13.036693,
+#         77.608116
+#     ],
+#     "_id": "64db5c27cf1cef5441b6af2b"
+#     },
+#     "revenue": 0,
+#     "createdAt": "2023-08-15T11:06:15.670Z",
+#     "updatedAt": "2023-08-15T11:06:15.670Z",
+#     "__v": 0
+# }
+
+
+
+#####################################################################  NOTIFICATION  #####################################################################
+GET http://localhost:5000/trial HTTP/1.1

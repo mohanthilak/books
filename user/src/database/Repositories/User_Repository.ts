@@ -107,6 +107,17 @@ class UserRepository implements UserRepositoryInterface {
         }
     }
 
+
+    async GetALLUsers() {
+        try{
+            const users = await UserModel.find({});
+            return {success: true, data: users, error: null};
+        }catch(e){
+            console.log("Error at the User Repository layer", e);
+            return {success: false, data: null, error: e}
+        }
+    }
+
     async Addlibrary(uid:string, lid:string): Promise<AddlibraryReturn>{
         try{
             const user = await UserModel.findById(uid);
