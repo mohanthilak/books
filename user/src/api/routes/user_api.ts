@@ -6,7 +6,7 @@ import { CreateUserInput, createUserSchema,  GetUserDetailsInput} from "../../Sc
 import validateResources from "../middlewares/validateRequest";
 import { Channel } from "amqplib";
 import {SubscribeMessage, PublishMessage} from "../../utils"
-import { COMMON_BINDING_KEY, COMMON_EXCHANGE } from "../../config";
+import { COMMON_BINDING_KEY, COMMON_EXCHANGE, LIBRARY_BINDING_KEY, LIBRARY_EXCHANGE, NOTIFICATION_BINDING_KEY, NOTIFICATION_EXCHANGE } from "../../config";
 
 interface user{
         username: string,
@@ -27,6 +27,7 @@ export const UserAPI = (app: Application, channel: Channel, service: UserService
     app.get("/trial", async (req:Request, res: Response)=>{
         console.log(++i)
         let data = await service.GetAllUsers();
+        channel.publish(NOTIFICATION_EXCHANGE, NOTIFICATION_BINDING_KEY, Buffer.from(JSON.stringify({operation:"Trial", fromService: "user-service", data: {date: Date.now()}})))
         if(data?.success) {
             return res.json({...data, statusCode: 200}); 
         }else{

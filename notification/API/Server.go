@@ -2,6 +2,7 @@ package API
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -10,6 +11,8 @@ import (
 
 	"Notifications/API/Controller"
 
+	socketio "github.com/googollee/go-socket.io"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
@@ -28,10 +31,37 @@ func NewServer(listenAddr string, Controller Controller.INotificationController)
 }
 
 func (s *Server) Start() {
+	ser := socketio.NewServer(nil)
+
+	ser.OnConnect("/", func(s socketio.Conn) error {
+		log.Println("lkjadslfjlajflasdkjfdklasjflakfjlkasfjalksfjalkfjalkj")
+		s.SetContext("")
+		log.Println("connected:", s.ID())
+		s.Emit("connection", "connected")
+		return nil
+	})
+	ser.OnEvent("hi", "hello", func(s socketio.Conn, msg string) {
+		fmt.Println("notice:", msg)
+		s.Emit("reply", "have "+msg)
+	})
+	ser.OnDisconnect("/", func(s socketio.Conn, reason string) {
+		log.Println("closed", reason, s.Context())
+	})
+	go func() {
+		log.Println("yeyeyeyeyyeyeyeyeyhuhuhuhu")
+		err := ser.Serve()
+		if err != nil {
+			log.Fatal("ERRRORRRR!!!!", err)
+		}
+	}()
+	defer ser.Close()
+	// defer ser.Close()
+
+	s.Handler.Handle("/socket.io/", ser)
 	s.Handler.HandleFunc("/trial", s.Controller.Trial)
 	server := http.Server{
 		Addr:         s.listenAddr,
-		Handler:      s.Handler,
+		Handler:      handlers.CORS(handlers.AllowCredentials(), handlers.AllowedOrigins([]string{"*"}))(s.Handler),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
@@ -41,6 +71,7 @@ func (s *Server) Start() {
 	go func() {
 		log.Println("Starting the Server on Port " + s.listenAddr)
 		err := server.ListenAndServe()
+		// http.ListenAndServe(":8000", handlers.CORS(handlers.AllowedOrigins([]string{"*"}))(s.Handler))
 		if err != nil {
 			log.Panicf("Error starting server: %s\nGracefully Ending the Server \n ", err)
 			os.Exit(1)

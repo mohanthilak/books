@@ -3,9 +3,20 @@ import {BooksService} from "../../services"
 import { auth } from "../Middlewares";
 import { Channel } from "amqplib";
 import { ServiceDependency } from "../../dependencyClass";
+import { USER_BINDING_KEY, USER_EXCHANGE } from "../../config";
 
 
 export const BooksAPI = (app:Application, channel: Channel, service: ServiceDependency)=>{
+
+    app.get("/book/trial", (req, res) =>{
+        try{
+            channel.publish(USER_EXCHANGE, USER_BINDING_KEY, Buffer.from(JSON.stringify({operation:"Trial", fromService: "user-service", data: {date: Date.now()}})))
+            return res.status(200).json({success: true, error:null, data: null})
+        }catch(e){
+            console.log("Error at Book Repository Layer", e);
+            return {success: false, data: null, error: e};
+        }
+    })
 
     app.get('/book/all', async(req, res)=>{
         try{

@@ -22,7 +22,7 @@ export const  CreateChannel = async ()=>{
         await channel.assertExchange(COMMON_EXCHANGE, 'direct', {durable: true});
         await channel.assertExchange(USER_EXCHANGE, 'direct', {durable: true});
         await channel.assertExchange(GATEWAY_EXCHANGE, 'direct', {durable: true});
-        await channel.assertExchange(LIBRARY_EXCHANGE, 'direct', {durable: true});
+        // await channel.assertExchange(LIBRARY_EXCHANGE, 'direct', {durable: true});
         channel.prefetch(1);
         return channel;
     }catch(e){
@@ -58,7 +58,7 @@ export const SubscribeMessage = async (channel:Channel, SD: ServiceDependency, R
                 // console.log()
                 // console.log(data.content.toString());
                 const msg = JSON.parse(data.content.toString());
-                console.log("received data", msg.requestID);
+                console.log("received data", msg);
                 // console.log("LA", msg);
                 await messageHandling.HandleMessage(msg);
                 // HandleMessagesFromBookService(msg);

@@ -40,6 +40,10 @@ class MessageHandline{
                this.DebarUser();
                 break;
             }
+            case "Trial" : {
+                console.log(this.data)
+                break;
+            }
             default : console.log("Default Case");
         }
     }
