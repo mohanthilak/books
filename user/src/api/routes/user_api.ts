@@ -8,8 +8,9 @@ import { Channel } from "amqplib";
 import {SubscribeMessage, PublishMessage} from "../../utils"
 import { COMMON_BINDING_KEY, COMMON_EXCHANGE, LIBRARY_BINDING_KEY, LIBRARY_EXCHANGE, NOTIFICATION_BINDING_KEY, NOTIFICATION_EXCHANGE } from "../../config";
 
+
 interface user{
-        username: string,
+        email: string,
         _id: string
     }
 declare global {
@@ -21,6 +22,21 @@ declare global {
   }
 
 
+  const setCookie = ( res: Response, data: any) =>{
+    console.log(data.data.refreshToken, "!!!!!!")
+    res.cookie("rt", data.data.refreshToken, {
+        httpOnly: true,
+        sameSite: "none",
+        secure: true,
+        maxAge: 24 * 60 * 60 * 1000,
+    });
+    res.cookie("uid", data.data.uid, {
+        httpOnly: true,
+        sameSite: "none",
+        secure: true,
+        maxAge: 24 * 60 * 60 * 1000,
+    });
+  }
 export const UserAPI = (app: Application, channel: Channel, service: UserService)=>{
     // SubscribeMessage(channel)
     let i =0;
@@ -36,40 +52,75 @@ export const UserAPI = (app: Application, channel: Channel, service: UserService
         // PublishMessage(channel, NOTIFICATION_BINDING_KEY, JSON.stringify({fromService: "UserService", typeOfNotification:"SMS", body: {userId: "DAFADF", TimeIssued:new Date(), operation:"send_otp"}}), NOTIFICATION_EXCHANGE)
     })
 
-    app.post("/signup", validateResources(createUserSchema) ,async (req: Request<{}, {}, CreateUserInput>, res: Response)=>{
+    app.post("/signup" ,async (req: Request, res: Response)=>{
         try{
-            const {username, password} = req.body;
-            const data = await service.SignUp({username, password});
-            if(data.created)
+            if(req.headers.logintype == "google"){
+                const {token}:{token:string} = req.body;
+                const data = await service.GoogleSignAuthentication({token});
+                console.log("data.data", data.data)
+                res.cookie("rt", data.data.refreshToken, {
+                    httpOnly: true,
+                    sameSite: "none",
+                    secure: true,
+                    maxAge: 24 * 60 * 60 * 1000,
+                });
+                res.cookie("uid", data.data.uid, {
+                    httpOnly: true,
+                    sameSite: "none",
+                    secure: true,
+                    maxAge: 24 * 60 * 60 * 1000,
+                });
+                console.log("response:", data)
+                return res.status(200).json(data)
+            }
+            const {email, password} = req.body;
+            const data = await service.SignUp({email, password});
+            if(data.success){
+                res.cookie("rt", data.data?.refreshToken, {
+                    httpOnly: true,
+                    sameSite: "none",
+                    secure: true,
+                    maxAge: 24 * 60 * 60 * 1000,
+                });
+                res.cookie("uid", data.data?.uid, {
+                    httpOnly: true,
+                    sameSite: "none",
+                    secure: true,
+                    maxAge: 24 * 60 * 60 * 1000,
+                });
+                console.log("response:", data)
                 return res.status(200).json(data);
-            res.status(422).json({data});
+            }
+            res.status(200).json({data});
         }catch(e){
             console.log("Error at api layer", e);
-            return res.status(422).json({message: "Username already exists"})
+            return res.status(200).json({message: "Email already exists"})
         }
     })
     
     
-    app.post("/login", validateResources(createUserSchema), async(req:Request<{}, {}, CreateUserInput>, res: Response)=>{
+    app.post("/signin", validateResources(createUserSchema), async(req:Request, res: Response)=>{
         try{
-            const {username, password}: signUpInterface = req.body;
-            const data = await service.Login({username, password});
+            if(req.headers.logintype == "google"){
+                const {token}:{token:string} = req.body;
+                const data = await service.GoogleSignAuthentication({token});
+                setCookie(res, data);
+                console.log("response:", data)
+                return res.status(200).json(data)
+            }
+            const {email, password}: signUpInterface = req.body;
+            const data = await service.Login({email, password});
             
-            if(data.data) return res.status(200).json({message: "Logged In Successfully", accessToken: data.data.AccessToken, refreshToken: data.data.RefreshToken});
+            if(data.success && data.data){
+                setCookie(res, data)
+                console.log("response:", {success: true, data:{uid: data.data.uid, accessToken: data.data.accessToken, refreshToken: data.data.refreshToken}, error: null}, "also available:", data)
+                return res.status(200).json({success: true, data:{uid: data.data.uid, accessToken: data.data.accessToken, refreshToken: data.data.refreshToken}, error: null});
+            } 
 
-                let statusCode = 200;    
-                if(data.err){
-                    switch(data.message){
-                        case "Server Error": statusCode=503;
-                        break;
-                        case "username not found": statusCode=404;
-                        console.log("Username not found at api layer")
-                        break;
-                        case "Username/Password Incorrect":
-                            statusCode = 401;
-                            break;
-                    }
-                    return res.status(statusCode).json({status: statusCode,message: data.message})
+            let statusCode = 200;    
+            if(data.err){
+                console.log("response:", data)
+                return res.status(statusCode).json({data})
             }
         }catch(e){
             console.log("Error at the API Layer: ", e);
@@ -77,15 +128,17 @@ export const UserAPI = (app: Application, channel: Channel, service: UserService
         }
     })
 
-    app.post("/logout/:uid", async(req: Request, res: Response) =>{
-        const refreshTokenToBeDeleted: string = req.body.refreshToken;
-        const accessToken: string = req.body.accessToken;
-        const {uid} = req.params;
-        const data = await service.DeleteRefreshToken(refreshTokenToBeDeleted, uid);
-
+    app.post("/logout",auth, async(req: Request, res: Response) =>{
+        const cookies = req.cookies;
+        if (!cookies?.rt) return res.sendStatus(403);
+        const {rt, uid}: {rt: string, uid: string} = cookies;
+        const {accessToken} = req.body; 
+        const data = await service.DeleteRefreshToken(rt, uid);
         if(!data.error){
             PublishMessage(channel, COMMON_BINDING_KEY, JSON.stringify({operation: "debar_user", data: {uid, accessToken}}), COMMON_EXCHANGE);
-            res.status(200).json({message: "Refresh Token Deleted"});
+            res.clearCookie("rt")
+            res.clearCookie("uid")
+            res.status(200).json({success:true, message: "Refresh Token Deleted"});
         }else{
             res.status(403).json(data);
         }
@@ -117,6 +170,31 @@ export const UserAPI = (app: Application, channel: Channel, service: UserService
         }catch(e){
             console.log("Error at API Layer", e);
             return res.json({requestSuccefull: false, message: "Server Error"})
+        }
+    })
+    // /Sends a new access token after validating the refresh token
+    app.post("/refresh", async (req, res) => {
+    try {
+        const cookies = req.cookies;
+        if (!cookies?.rt) return res.sendStatus(403);
+        const {rt, uid} = cookies;
+        const data = await service.RefreshAccessTokenWithUserDetails(rt, uid);
+        console.log("response:", data)
+        return res.status(200).json(data);
+    } catch (e) {
+        console.log("Error while handling refresh access token handler", e);
+        return res.status(202).json({ message: "error", e });
+    }
+    });
+
+    app.post("/update-loc", auth, async(req, res) =>{
+        try{
+            const {latitude, longitude}:{latitude: number, longitude: number} = req.body;
+            const data = await service.UpdateUserLocation({latitude, longitude, uid: req.user?._id as string});
+            return res.status(200).json(data); 
+        }catch(e){
+            console.log("Error while handling update-location handler", e);
+            return res.status(202).json({success: false, data: null, error: e});
         }
     })
 }

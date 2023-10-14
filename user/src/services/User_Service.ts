@@ -1,7 +1,9 @@
 import {UserRepository} from "../database";
-import {sign, verify, JwtPayload} from 'jsonwebtoken';
+import {sign, verify, JwtPayload } from 'jsonwebtoken';
 import {ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET} from "../config";
 import {signUpInterface, userAuthDataInterface, AuthTokens} from "../dto";
+import decode from "jwt-decode"
+
 
 class UserService{
     private readonly repository;
@@ -9,24 +11,38 @@ class UserService{
         this.repository =  UR;
     }
     
-    async SignUp({username, password}:signUpInterface){
+    async SignUp({email, password}:signUpInterface){
         try{
-            const data = await this.repository.CreateUser({username, password});
+            const data = await this.repository.CreateUser({email, password});
             console.log("User Created: ", data.data)
 
-            if(data.created && data.data){
+            if(data.success && data.data){
                 const user = data.data;
-                const tokens = await this.CreateAuthTokens({username: user.username, _id: user._id})
-                return {created: true, _id: user._id, message: "User Created", tokens};
+                const {accessToken, refreshToken} = await this.CreateAuthTokens({email: user.email, _id: user._id})
+                return {success: true, data: {uid: user._id,accessToken, refreshToken, name: user.name, profilePicture: user.profilePicture},  message: "User Created"};
             }
 
-            return {created: false, _id:null, message: 'Username Already Exists', tokens: null}; 
+            return {success: false, data: null, message: 'Username Already Exists'}; 
         }catch(e){
             console.log("Error at Customer Service Layer", e);
-            return {created: false, _id:null, message: 'Server Error', tokens: null}; 
+            return {success: false, data: null, message: 'Server Error'}; 
         }
     }
 
+    async Login(userInputs: signUpInterface){
+        try{
+            const data = await this.repository.GetPasswordWithEmailAndID(userInputs)
+            if(data.data){
+                const payload = {email: userInputs.email, _id: data.data._id}
+                const {accessToken, refreshToken} = await this.CreateAuthTokens(payload);
+                return {success: true, err: null, data: {accessToken, refreshToken, uid: data.data._id}}; 
+            }else return {success: false, err: data.err, data:null};
+        }catch(e){
+            console.log("Error at the service layer: ", e);
+            return {success: false, err: e, data:null}
+        }
+    }
+    
     async GetAllUsers(){
         try{
             return this.repository.GetALLUsers();
@@ -35,22 +51,27 @@ class UserService{
             return {success: false, data: null, error: e};
         }
     }
-
-    async Login(userInputs: signUpInterface){
-        try{
-            const data = await this.repository.GetPasswordWithUsernameAndID(userInputs)
-                if(data.data){
-                    const payload = {username: userInputs.username, _id: data.data._id}
-                    const {AccessToken, RefreshToken} = await this.CreateAuthTokens(payload);
-                    return { err: null, data: {AccessToken, RefreshToken}, message: "Successfully LoggedIn"}; 
-                }else return {err: data.err, data:null, message: data.message};
-        }catch(e){
-            console.log("Error at the service layer: ", e);
-            return {err: e, data:null, message: "Server Error"}
+    
+    
+    async RefreshAccessTokenWithUserDetails(refreshToken:string, uid:string){
+        try {
+            const tokensData = await this.GenerateAccessToken(refreshToken, uid);
+            if(tokensData.success){
+                const userData = await this.GetUserWithID({uid});
+                if(userData.success){
+                    console.log(userData.data)
+                    return {success: true, data: {...tokensData.data, name:userData.data?.name, profilePicture:userData.data?.profilePicture, currentLocation:{latitude: userData.data?.currentLocation?.coordinates[0], longitude: userData.data?.currentLocation?.coordinates[1]} }}
+                }
+                return userData;
+            } 
+            return tokensData;
+        } catch (e) {
+            console.log("Error at user service layer", e);
+            return {success: false, data: null, error: e};
         }
+       
     }
-
-
+    
     async GenerateAccessToken(refreshToken:string, uid:string){
         try{
             const data = await this.repository.FindRefreshToken(refreshToken, uid);
@@ -58,38 +79,93 @@ class UserService{
                 return data;
             }else{
                 const user = <JwtPayload>verify(refreshToken, REFRESH_TOKEN_SECRET);
-                const accesstoken = sign({username: user.username, _id:user._id}, ACCESS_TOKEN_SECRET, {expiresIn: '30m'});
-                return {err: null, data:{accesstoken, refreshToken}, message:"AccessToken Successfully created"};
+                const accesstoken = sign({email: user.email, _id:user._id}, ACCESS_TOKEN_SECRET, {expiresIn: '30m'});
+                return {success: true, err: null, data:{accesstoken, refreshToken, uid}, message:"AccessToken Successfully created"};
             }
         }catch(e){
             console.log("Error at User Service Layer", e);
-            return {err: e, data:null, message: "Invalid Refresh Token"};
+            return {success: false, err: e, data:null, message: "Invalid Refresh Token"};
         }
     }
-
-
-    async GetUser({username, _id}:userAuthDataInterface){
+    
+    
+    async GetUser({email, _id}:userAuthDataInterface){
         try{
-            const data = await this.repository.GetUserWithUsername({username, _id});
+            const data = await this.repository.GetUserWithEmail({email, _id});
             return data;
         }catch(e){
             console.log("Error at service layer", e);
             return {err: true, userfound: false, message: "Error", data: false};
         }
     }
-
-
+    
+    
     async DeleteRefreshToken(refreshTokenToBeDeleted:string, uid:string){
         const data = await this.repository.DeleteRefreshToken(refreshTokenToBeDeleted, uid);
         return data;
     }
-
     
-    private async CreateAuthTokens({username, _id}: userAuthDataInterface): Promise<AuthTokens> {
-        const AccessToken = sign({username, _id}, ACCESS_TOKEN_SECRET, { expiresIn: "30m" });
-        const RefreshToken = sign({username, _id}, REFRESH_TOKEN_SECRET);
-        this.repository.AddRefreshToken(RefreshToken, _id);
-        return {AccessToken, RefreshToken}
+    
+    private async CreateAuthTokens({email, _id}: userAuthDataInterface): Promise<AuthTokens> {
+        const accessToken = sign({email, _id}, ACCESS_TOKEN_SECRET, { expiresIn: "30m" });
+        const refreshToken = sign({email, _id}, REFRESH_TOKEN_SECRET);
+        this.repository.AddRefreshToken(refreshToken, _id);
+        return {accessToken, refreshToken}
+    }
+    
+    async GoogleSignAuthentication({token}:{token:string}){
+        try{
+            const decodedToken = this.DecodeToken({token});
+            if(decodedToken.success) {
+                const {given_name, family_name, sub, email, picture} = decodedToken.data;
+                const name = given_name + ' ' + family_name;
+                const userExists = await this.GetUserWithGoogleID({googleID: sub});
+            
+                if(userExists.success){
+                    if(userExists.data){
+                        const {accessToken, refreshToken} = await this.CreateAuthTokens({email, _id: userExists.data._id});
+                        return {success: true,data: {uid: userExists.data._id, accessToken, refreshToken, name, profilePicture: picture}, error: null}
+                    }
+                    const data = await this.repository.GoogleSignUp({name, googleID: sub, email, profilePicture: picture});
+                    if(data.success){
+                        const {accessToken, refreshToken} = await this.CreateAuthTokens({email, _id: data.data?._id});
+                        // console.log("\n\n\n!@!@!@!@!",{uid: data.data?._id, accessToken, refreshToken, ...data.data})
+                        return {success: true, data: {uid: data.data?._id, accessToken, refreshToken, name, profilePicture: picture}, error: null}
+                    }
+                    return data;
+                }
+                
+                return userExists;
+
+            }
+            return decodedToken;
+        }catch(e){
+            console.log("Error at user service level", e);
+            return {success: false, data:null, error: e};
+        }
+    }
+
+
+    private DecodeToken({token}: {token:string}){
+        try{
+            const data = decode(token) as any;
+            return {success: true, data, error: null}
+        }catch(e) {
+            console.log("Error at user service layer", e);
+            return {success: false, data: null, error: e};
+        }
+    }
+
+    async GetUserWithID({uid}:{uid:string}){
+        return this.repository.GetUserWithUserID({uid});
+    }
+
+    async GetUserWithGoogleID({googleID}: {googleID:string}) {
+        return this.repository.GetUserWithGoogleID({googleID})
+    }
+
+    async UpdateUserLocation({latitude, longitude, uid}: {latitude:number, longitude: number, uid: string}){
+        return this.repository.UpdateUserLocation({latitude, longitude, uid});
     }
 
     // async UpdateLocation(inputs: updateLocationInterface){

@@ -2,6 +2,13 @@ import { DocumentType, getModelForClass, modelOptions, pre, prop,Ref, Severity, 
 import bcrypt from "bcrypt";
 // import {Library} from "./library"
 
+export class Location {
+    @prop({required: true,enum: {type: "Point"},type:()=> String})
+    type: string
+
+    @prop({requied: true, type: ()=> [Number, Number]})
+    coordinates: [number, number]
+}
 
 @pre<User>("save", async function(){
     if(!this.isModified("password"))
@@ -20,17 +27,29 @@ import bcrypt from "bcrypt";
     }
 })
 export class User {
-    @prop({required: true, unique: true})
-    username: string;
+    @prop({unique: true})
+    email: string;
 
-    @prop({require: true})
+    @prop({})
     password: string
 
-    @prop()
-    roles:string[];
+    @prop({default:"Phineas"})
+    name: string
+    
+    @prop({})
+    googleID: string
+
+    @prop({default: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQOaEB7ZWMMO32jsII22Bl8QGs5wxZpkhOQ3AjGp0DZqbXNuzJUX5PyyecGy2JeYd0kiVk&usqp=CAU"})
+    profilePicture: string
+    
+    @prop({})
+    phoneNumber: number
 
     @prop()
-    libraries: string[]; 
+    libraries: string[];
+
+    @prop()
+    currentLocation: Location
 
    async validatePassword(this: DocumentType<User>, CandidatePassword: string){
     try{

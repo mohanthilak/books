@@ -1,12 +1,12 @@
 import {UserModel ,User} from "../Models/user";
 import {RefreshTokensModel} from "../Models/refreshToken"
-import { AddlibraryReturn, AddRefreshTokenReturn, DeleteRefreshTokenReturn, FindRefreshTokenReturn, GetPasswordReturn, GetUserWithUsernameReturn, signUpInterface, signUpInterfaceReturn } from "../../dto";
+import { AddlibraryReturn, AddRefreshTokenReturn, DeleteRefreshTokenReturn, FindRefreshTokenReturn, GetPasswordReturn, GetUserWithEmailReturn, signUpInterface, signUpInterfaceReturn } from "../../dto";
 
 export interface UserRepositoryInterface {
-    CreateUser( inputs: signUpInterface): Promise<signUpInterfaceReturn>
-    GetPasswordWithUsernameAndID({username, password}: signUpInterface): Promise<GetPasswordReturn>
+    // CreateUser( inputs: signUpInterface): Promise<signUpInterfaceReturn>
+    GetPasswordWithEmailAndID({email, password}: signUpInterface): any
     DeleteRefreshToken(refreshTokenToBeDeleted:string, uid:string): Promise<DeleteRefreshTokenReturn>
-    GetUserWithUsername({username, _id}:{username: string, _id: string}): Promise<GetUserWithUsernameReturn>
+    GetUserWithEmail({email, _id}:{email: string, _id: string}): Promise<GetUserWithEmailReturn>
     AddRefreshToken(token:string, uid:string): Promise<AddRefreshTokenReturn>
     FindRefreshToken(token:string, uid:string): Promise<FindRefreshTokenReturn>
     Addlibrary(uid:string, lid:string): Promise<AddlibraryReturn>
@@ -15,40 +15,62 @@ export interface UserRepositoryInterface {
 
 class UserRepository implements UserRepositoryInterface {
     
-    async CreateUser(inputs: signUpInterface): Promise<signUpInterfaceReturn>{
+    async CreateUser(inputs: signUpInterface){
         try{
+            console.log(inputs)
             const user= new UserModel(inputs);
             await user.save();
             
-            console.log("user create!", user.username)
-            const data = {username: user.username, _id: user._id}
-            return {created: true, data, message: "Successfully Created"};
+            console.log("user created!", user.email)
+            const data = {email: user.email, _id: user._id, name: user.name, profilePicture: user.profilePicture}
+            return {success: true, data, error: null};
 
         }catch(e: any){
             if(e.code == 11000){
-                console.log("Username Already Exists")
-                return {created: false, data: null, message: "Username Already Exists"};
+                console.log("email Already Exists", e)
+                return {success: false, data: null, error: "email Already Exists"};
             }
             console.log("Error while creating user", e)
-            return {created: false, data: null, message: e.message};
+            return {success: false, data: null, error: e.message};
         }
     }
 
-    async GetPasswordWithUsernameAndID({username, password}: signUpInterface): Promise<GetPasswordReturn>{
+    async GoogleSignUp({name, googleID, email, profilePicture}: {name: string, googleID: string, email:string, profilePicture: string}){
         try{
-            const data = await UserModel.findOne({username}).select("password _id");
+            const user = new UserModel({name, googleID, email, profilePicture});
+            await user.save();
+            return {success: true, data: user, error: null};
+        }catch(e){
+            console.log("error at user repository layer", e);
+            return {success: false, data: null, error: e}
+        }
+    }
+
+    async GetUserWithGoogleID({googleID}: {googleID: string}){
+        try{
+            const user = await UserModel.findOne({googleID}).lean();
+            return {success: true, data: user?user:null, error: null};
+        }catch(e){
+            console.log("Error at User Repository layer", e);
+            return {success: false, data: null, error: e}
+        }
+    }
+
+    async GetPasswordWithEmailAndID({email, password}: signUpInterface){
+        try{
+            const data = await UserModel.findOne({email}).select("password _id");
             if(data){
                 const userIsValid = await data.validatePassword(password)
                 if(userIsValid)
-                    return {err: false, data, message: "Authenticated" };
+                    return {success: true, err: null, data };
                 else 
-                    return {err: true, data: null, message: "Username/Password Incorrect"}
+                    return {success: false, err: "Email/Password Incorrect", data: null}
             }else{             
-                return {err: true, data: null, message: "username not found"};
+                return {success: false, err: "Email not found", data: null};
             }
         }catch(e:any){
             console.log("Error at the repository layer: ", e);
-            return {err: true,data: null, message: e.message}
+            return {success: false, err: e.message,data: null}
         }
     }
     
@@ -57,25 +79,36 @@ class UserRepository implements UserRepositoryInterface {
             const data = await RefreshTokensModel.findOneAndDelete({refreshToken: refreshTokenToBeDeleted, user: uid});
             console.log("refreshToken:", data);
             if(data)
-            return {error: null};
+            return {success: true, data: null, error: null};
             else
-            return {error: "Invalid Refresh Token"};
+            return {success: false, data: null, error: "Invalid Refresh Token"};
         }catch(error){
             console.log("Error at User Repository Layer",error);
-            return {error}
+            return {success: false, data: null, error}
         }
     }
 
-    async GetUserWithUsername({username, _id}:{username: string, _id: string}): Promise<GetUserWithUsernameReturn>{
+    async GetUserWithEmail({email, _id}:{email: string, _id: string}): Promise<GetUserWithEmailReturn>{
         try{
-            let user = await UserModel.findOne({ username, _id }).select("-password").lean();
+            let user = await UserModel.findOne({ email, _id }).select("-password").lean();
             if(user)
-                return {err: false, userExists: true, data:{username: user.username, _id:user._id, libraries:user.libraries, roles: user.roles}, message: "Successfully Retrived details"};
+                return {err: false, userExists: true, data:{email: user.email, _id:user._id, libraries:user.libraries}, message: "Successfully Retrived details"};
             else
                 throw {message: 'user does not exits'};
         }catch(e:any){
             console.log("Error at the repository layer: ", e);
             return {err: true, userExists: false, data: null, message: e.message};
+        }
+    }
+
+    async GetUserWithUserID({uid}:{uid: string}){
+        try{
+            const user = await UserModel.findById(uid).lean();
+            const {password, ...userData} = Object.assign({}, user);
+            return {success: user?true:false, data: userData, error: user?null:"Invalid user ID"};
+        }catch(e){
+            console.log("Error at the repository layer: ", e);
+            return {error: e, data: null, success: false};
         }
     }
 
@@ -93,17 +126,15 @@ class UserRepository implements UserRepositoryInterface {
 
     async FindRefreshToken(token:string, uid:string): Promise<FindRefreshTokenReturn>{
         try{
-            console.log(token, uid);
             const refreshtoken = await RefreshTokensModel.findOne({refreshToken: token, user: uid});
-            console.log(refreshtoken)
             if(refreshtoken){
-                return {err: null, data: null, message: "Token Found"};
+                return {success: true, err: null, data: null, message: "Token Found"};
             }else{
-                return {err: true, data: null, message: "Token Not Found"};
+                return {success: false, err: true, data: null, message: "Token Not Found"};
             }
         }catch(e){
             console.log("Error at User Repository Layer", e);
-            return {err: true, data: null, message: "Token not found"}
+            return {success: false, err: true, data: null, message: "Token not found"}
         }
     }
 
@@ -132,6 +163,23 @@ class UserRepository implements UserRepositoryInterface {
         }
     }
 
+    async UpdateUserLocation({latitude, longitude, uid}: {latitude: number, longitude: number, uid: string}){
+        try{
+            const user = await UserModel.findById(uid);
+            if(user){
+                const loc: {type:string, coordinates: [number, number]} = {type: "Point", coordinates: [latitude, longitude]};
+                user.currentLocation = loc;
+                user.save();
+                const newUser = user.toObject()
+                const {password, ...userDataWithoutPassword} = newUser;
+                return {success: true, data: userDataWithoutPassword, error: null}; 
+            }
+            return {success: false, data: null, error: "Invalid userID"}
+        }catch(e){
+            console.log("Error while Updating User Location at User-Repository layer:", e);
+            return {success: false, data: null, error: e}
+        }
+    }
 
     // async UpdateLocation(inputs: updateLocationInterface){
     //     try{

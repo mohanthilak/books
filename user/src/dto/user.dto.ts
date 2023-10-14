@@ -6,18 +6,18 @@ export interface locationInterface{
 }
 
 export interface userAuthDataInterface{
-    username: string,
+    email: string,
     _id: string
 }
 
 export interface signUpInterface{
-    username: string,
+    email: string,
     password: string,
 }
 
 
 export interface userType{
-    username: string,
+    email: string,
     password: string,
     _id: string,
 }
@@ -36,9 +36,8 @@ export interface bookBasicInterface{
 }
 
 export interface UserDetailsWithoutPassword {
-    username: string,
+    email: string,
     _id: string,
-    roles: string[],
     libraries: string[]
 }
 
@@ -47,9 +46,9 @@ export interface UserDetailsWithoutPassword {
 
 
 export interface signUpInterfaceReturn {
-    created: boolean,
+    success: boolean,
     data: userAuthDataInterface|null,
-    message: string
+    error: any
 }
 
 export interface GetPasswordReturn {
@@ -57,15 +56,17 @@ export interface GetPasswordReturn {
     data: {
         password: string,
         _id: string
-    }|null,
+    },
     message:string
 }
 
 export interface DeleteRefreshTokenReturn {
+    success: boolean,
+    data: any,
     error: any
 }
 
-export interface GetUserWithUsernameReturn {
+export interface GetUserWithEmailReturn {
     err: boolean,
     userExists: boolean,
     data: UserDetailsWithoutPassword | null,
@@ -77,6 +78,7 @@ export interface AddRefreshTokenReturn {
 }
 
 export interface FindRefreshTokenReturn {
+    success: boolean
     err: null|boolean,
     data: null,
     message: string
@@ -89,6 +91,6 @@ export interface AddlibraryReturn {
 
 //-----------------------------------------------------------------------------------------------------------
 export interface AuthTokens {
-    AccessToken: string,
-    RefreshToken: string,
+    accessToken: string,
+    refreshToken: string,
 }
