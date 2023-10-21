@@ -1,4 +1,4 @@
-import {BookModel, Book} from "../Models";
+import {BookModel, Book, BorrowRequestModel} from "../Models";
 import {AddBooksAPIInterface, RequestBorrowBookInterface} from "../../dto"
 
 const errorMessage = "Error occured at Books Repository Layer: ";
@@ -16,12 +16,22 @@ class BooksRepository{
     }
     async BorrowRequest({ book_id, timestamp, uid }:RequestBorrowBookInterface) {
         try{
-            const data = await BookModel.findById(book_id);
-            if(data){
+            const BorrowRequest = new BorrowRequestModel({user: uid, timestamp});
+            await BorrowRequest.save();
+
+            const book = await BookModel.findById(book_id).populate('borrowRequest');
+            if(book){
                 const obj = {user: uid, timestamp}
-                data.borrowRequest.push(obj);
-                await data.save();
-                return {success: true, data, error: null}
+                console.log(book)
+                if(book.borrowRequest){
+                    book.borrowRequest.push(BorrowRequest._id)
+                }else{
+                    book.borrowRequest = [BorrowRequest._id]
+                }
+                await book.save();
+                book.borrowRequest[book.borrowRequest.length-1] = BorrowRequest;
+
+                return {success: true, data: book, error: null}
             } else{
                 return {success: false, data: null, error: "Book ID invalid"}
             }
@@ -30,6 +40,7 @@ class BooksRepository{
             return {success: false, data: null, error: e};
         }
     }
+
 
     async AddSingleBook(obj: AddBooksAPIInterface){
 

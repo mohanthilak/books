@@ -1,12 +1,12 @@
 import { getModelForClass, modelOptions, prop, Prop, Ref, Severity } from "@typegoose/typegoose";
 import {Library, Location} from "./index"
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 
 export class BorrowRequest {
     @prop({required:true, type:()=> String})
     user: string
  
-    @prop({required:true, type:()=> String})
+    @prop({required:true, type:()=> Number})
     timestamp: Number
 }
 
@@ -46,9 +46,10 @@ export class Book {
     @prop({type: ()=> String})
     previousOwners: string[];
     
-    @prop()
-    borrowRequest: BorrowRequest[]
+    @prop({ref:"BorrowRequest",required: false})
+    borrowRequest: Ref<BorrowRequest, string>[]
 }
 
 const BookModel = getModelForClass(Book);
-export {BookModel}
+const BorrowRequestModel = getModelForClass(BorrowRequest);
+export {BookModel, BorrowRequestModel}

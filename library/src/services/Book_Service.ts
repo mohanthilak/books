@@ -52,7 +52,7 @@ class BooksService{
         try{
             const repoResponse = await this.BooksRepo.BorrowRequest({book_id, timestamp, uid});
             if(repoResponse.success){
-                channel.publish(NOTIFICATION_EXCHANGE, NOTIFICATION_BINDING_KEY, Buffer.from(JSON.stringify({fromService: "library", operation: "Notify-lender", data:{type:"all", message: {data: `A user has request for the book ${repoResponse.data?.name}`, relatedUsers: [repoResponse.data?.borrowRequest[repoResponse.data?.borrowRequest.length-1]]}}})))
+                channel.publish(NOTIFICATION_EXCHANGE, NOTIFICATION_BINDING_KEY, Buffer.from(JSON.stringify({fromService: "library", operation: "Notify-lender", data:{type:"all", message: {data: `A user has request for the book ${repoResponse.data?.name}`, lender:repoResponse.data?.owner, relatedUser: repoResponse.data?.borrowRequest[repoResponse.data?.borrowRequest.length-1]}}})))
             }
             return repoResponse;
         }catch(e){
