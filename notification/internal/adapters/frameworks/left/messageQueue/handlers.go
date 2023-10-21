@@ -6,19 +6,30 @@ import (
 	"log"
 )
 
-func trialHandler(body json.RawMessage, app ports.ApplicationInterface) (bool, error) {
-	log.Println(string(body))
-	return true, nil
+func trialHandler(body message, app ports.ApplicationInterface) bool {
+	log.Println(body)
+	return true
 }
 
-func notifyLenderHandler(body json.RawMessage, app ports.ApplicationInterface) (bool, error) {
-	var data ports.NotifyLenderStruct
-	if err := json.Unmarshal(body, &data); err != nil {
+func notifyLenderHandler(body message, app ports.ApplicationInterface) bool {
+	var data ports.NotifyLenderStructR
+	if err := json.Unmarshal(body.Data, &data); err != nil {
 		log.Println("Error while converting queue data from json")
 	}
-
-	if err := app.NotifyLender(data); err != nil {
-		return false, err
+	notifyLenderMessageData := *&ports.NotifyLenderStruct{
+		Type:        data.Type,
+		Operation:   body.Operation,
+		FromService: body.FromService,
+		Message:     data.Message.Data,
+		Recipient:   data.Message.Lender,
+		RelatedUser: data.Message.RelatedUser.User,
+		RequestID:   data.Message.RelatedUser.RequestID,
+		Timestamp:   int32(data.Message.RelatedUser.Timestamp),
+		Display:     true,
 	}
-	return true, nil
+	if err := app.NotifyLender(notifyLenderMessageData); err != nil {
+		log.Fatal("error at notify lender handler", err)
+		return false
+	}
+	return true
 }

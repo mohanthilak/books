@@ -9,6 +9,8 @@ import (
 	"os/signal"
 	"time"
 
+	"Notifications/internal/ports/httpserver"
+
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
@@ -18,7 +20,7 @@ type Adapter struct {
 	addr   string
 }
 
-func NewAdapter(router *mux.Router, addr string) *Adapter {
+func NewAdapter(router *mux.Router, addr string) httpserver.HttpServerInterface {
 	return &Adapter{
 		router: router,
 		addr:   addr,
@@ -33,10 +35,10 @@ func (adpt *Adapter) initiateRoutes() {
 	})
 }
 
-func (adpt Adapter) Start() {
+func (adpt *Adapter) Start(rabbitMQCloseFunc func(), mongoDBCloseFunc func()) {
 	adpt.initiateRoutes()
 	server := http.Server{
-		Addr:         "127.0.0.1:8000",
+		Addr:         "127.0.0.1:" + adpt.addr,
 		Handler:      handlers.CORS(handlers.AllowCredentials(), handlers.AllowedOrigins([]string{"*"}))(adpt.router),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
@@ -49,7 +51,7 @@ func (adpt Adapter) Start() {
 		err := server.ListenAndServe()
 		// http.ListenAndServe(":8000", handlers.CORS(handlers.AllowedOrigins([]string{"*"}))(s.Handler))
 		if err != nil {
-			log.Panicf("Error starting server: %s\nGracefully Ending the Server \n ", err)
+			log.Panicf("Error running server: %s\nGracefully Ending the Server \n ", err)
 			os.Exit(1)
 		}
 
@@ -64,6 +66,9 @@ func (adpt Adapter) Start() {
 	//Block until a signal is received
 	sig := <-c
 	log.Println("Got Signal", sig)
+
+	rabbitMQCloseFunc()
+	mongoDBCloseFunc()
 
 	//gracefully shutdown the server, waiting max 300 second for current operations to complete
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)

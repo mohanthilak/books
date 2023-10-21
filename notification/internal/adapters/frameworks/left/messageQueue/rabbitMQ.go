@@ -12,7 +12,7 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-type Adapater struct {
+type Adapter struct {
 	connectionURL string
 	connection    *amqp.Connection
 	channel       *amqp.Channel
@@ -21,18 +21,25 @@ type Adapater struct {
 	API           ports.ApplicationInterface
 }
 
-func NewAdapter(url string, api ports.ApplicationInterface) *Adapater {
-	adpt := &Adapater{connectionURL: url, API: api, handlers: make(map[string]messageHandler)}
+func NewAdapter(url string, api ports.ApplicationInterface) *Adapter {
+	adpt := &Adapter{connectionURL: url, API: api, handlers: make(map[string]messageHandler)}
 	adpt.setUpHandlers()
 	return adpt
 }
 
-func (adpt *Adapater) setUpHandlers() {
+func (adpt *Adapter) setUpHandlers() {
 	adpt.handlers["Trial"] = trialHandler
 	adpt.handlers["Notify-lender"] = notifyLenderHandler
 }
 
-func (adpt *Adapater) MakeConnection() {
+func (adpt *Adapter) CloseConnection() {
+	log.Println("Closing RabbitMQ Connection")
+	if err := adpt.connection.Close(); err != nil {
+		log.Fatal("Cloud not close RabbitMQ Connection", err)
+	}
+}
+
+func (adpt *Adapter) MakeConnection() {
 	connection, err := amqp.Dial(adpt.connectionURL)
 	if err != nil {
 		log.Fatal("Couldn't connect to message queue", err)
@@ -43,7 +50,7 @@ func (adpt *Adapater) MakeConnection() {
 	go adpt.consumeMessage()
 }
 
-func (adpt *Adapater) createChannel() {
+func (adpt *Adapter) createChannel() {
 	ch, err := adpt.connection.Channel()
 	if err != nil {
 		log.Println(err, "Failed to open a channel")
@@ -51,7 +58,7 @@ func (adpt *Adapater) createChannel() {
 	adpt.channel = ch
 }
 
-func (adpt Adapater) declareExchnage() {
+func (adpt Adapter) declareExchnage() {
 	err := adpt.channel.ExchangeDeclare(
 		"NOTIFICATION_EXCHANGE", // name
 		"direct",                // type
@@ -66,7 +73,7 @@ func (adpt Adapater) declareExchnage() {
 	}
 }
 
-func (adpt *Adapater) PublishMessage(exchange, routingKey, data string) error {
+func (adpt *Adapter) PublishMessage(exchange, routingKey, data string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -83,7 +90,7 @@ func (adpt *Adapater) PublishMessage(exchange, routingKey, data string) error {
 	return err
 }
 
-func (adpt *Adapater) declareQueue() {
+func (adpt *Adapter) declareQueue() {
 	q, err := adpt.channel.QueueDeclare(
 		"NOTIFICATION_QUEUE", // name
 		true,                 // durable
@@ -98,7 +105,7 @@ func (adpt *Adapater) declareQueue() {
 	adpt.queue = q
 }
 
-func (adpt *Adapater) bindQueue() {
+func (adpt *Adapter) bindQueue() {
 	err := adpt.channel.QueueBind(
 		adpt.queue.Name,         // queue name
 		"NOTIFICATION",          // routing key
@@ -111,7 +118,7 @@ func (adpt *Adapater) bindQueue() {
 	}
 }
 
-func (adpt *Adapater) consumeMessage() error {
+func (adpt *Adapter) consumeMessage() error {
 	adpt.declareQueue()
 	adpt.bindQueue()
 
@@ -130,14 +137,18 @@ func (adpt *Adapater) consumeMessage() error {
 	forever := make(chan bool)
 	go func() {
 		for d := range msgs {
-			fmt.Printf("\nRecieved Message: %s\n", d.Body)
+			fmt.Printf("\n")
+			log.Printf("Recieved Message: %s\n", d.Body)
 			if ans, err := adpt.routeMessages(d.Body); !ans {
 				log.Println("unable to handle message", err)
-				err := d.Ack(false)
-				log.Println("Error!!", err)
+				if err := d.Ack(false); err != nil {
+					log.Println("Unable to Acknowledge Messages from RabbitMQ", err)
+				}
 			} else {
-				err := d.Ack(false)
-				log.Println("Error!!", err)
+				err := d.Ack(true)
+				if err != nil {
+					log.Println("Unable to Acknowledge Messages from RabbitMQ", err)
+				}
 			}
 		}
 	}()
@@ -148,14 +159,19 @@ func (adpt *Adapater) consumeMessage() error {
 	return nil
 }
 
-func (adpt Adapater) routeMessages(body []byte) (bool, error) {
+func (adpt Adapter) routeMessages(body []byte) (bool, error) {
 	var mes message
 	if err := json.Unmarshal(body, &mes); err != nil {
 		log.Println("unable to unmarshal message", err)
 		return false, err
 	}
 	if handler, ok := adpt.handlers[mes.Operation]; ok {
-		return handler(mes.Data, adpt.API)
+		acknowledge := handler(mes, adpt.API)
+		if !acknowledge {
+			return false, errors.New("handler error")
+		} else {
+			return true, nil
+		}
 	} else {
 		return false, errors.New("no such operation found")
 	}

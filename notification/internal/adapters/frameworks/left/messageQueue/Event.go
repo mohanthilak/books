@@ -11,4 +11,4 @@ type message struct {
 	Data        json.RawMessage `json:"data"`
 }
 
-type messageHandler func(json.RawMessage, ports.ApplicationInterface) (bool, error)
+type messageHandler func(message, ports.ApplicationInterface) bool

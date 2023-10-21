@@ -27,7 +27,6 @@ func NewAdapter(router *mux.Router) *Adapter {
 }
 
 func (adpt *Adapter) Start() {
-	log.Println("starting")
 	adpt.router.HandleFunc("/ws/{uid}", adpt.handleSocketRoute)
 	// adpt.router.HandleFunc("/trial", func(w http.ResponseWriter, r *http.Request) {
 	// 	log.Println("New Connection")
@@ -58,7 +57,6 @@ func (adpt Adapter) handleSocketRoute(w http.ResponseWriter, r *http.Request) {
 }
 
 func (adpt Adapter) CheckAvailable(clinetID string) bool {
-	log.Println(adpt.manager.Clients, "   ", clinetID)
 	if _, ok := adpt.manager.Clients[clinetID]; ok {
 		return true
 	}
@@ -66,8 +64,8 @@ func (adpt Adapter) CheckAvailable(clinetID string) bool {
 }
 
 func (adpt Adapter) SendMessage(clientID, msgType string, mes []byte) error {
-	log.Println("CLientID::", clientID, "!!!!")
 	if isOnline := adpt.CheckAvailable(clientID); !isOnline {
+		log.Printf("User: %s Offline", clientID)
 		return errors.New("user offline")
 	}
 	event := Event{

@@ -1,5 +1,5 @@
 package httpserver
 
 type HttpServerInterface interface {
-	Start()
+	Start(func(), func())
 }

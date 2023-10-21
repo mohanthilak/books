@@ -9,32 +9,28 @@ import (
 
 type Application struct {
 	socket websokcetserver.WebSocketServerInterface
+	DB     ports.DBInterface
 }
 
-// func Newwwww() *Application {
-// 	return &Application{}
-// }
-
-func New(socket websokcetserver.WebSocketServerInterface) *Application {
+func New(socket websokcetserver.WebSocketServerInterface, DB ports.DBInterface) *Application {
 	return &Application{
 		socket: socket,
+		DB:     DB,
 	}
 }
 
 func (app *Application) NotifyLender(data ports.NotifyLenderStruct) error {
+	app.DB.InsertBorrowReturnRequest(&data)
 
-	type responseStruct struct {
-		Message   string
-		TimeStamp int64
-	}
-	response := responseStruct{
-		Message:   data.Message.Data,
-		TimeStamp: data.Message.RelatedUsers.Timestamp,
-	}
-	jsonResponse, err := json.Marshal(response)
+	//Sending Message to Lender
+	JSONData, err := json.Marshal(data)
 	if err != nil {
-		return err
+		log.Println("Error while Marshalling JSON", err)
+	} else {
+		if err = app.socket.SendMessage(data.Recipient, "Notification", JSONData); err != nil {
+			log.Println("could not send notification")
+		}
 	}
-	log.Println("data:", data)
-	return app.socket.SendMessage("123", "Notification", jsonResponse)
+
+	return nil
 }
