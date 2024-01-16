@@ -4,13 +4,13 @@ const errorMessage = "Error occured at Library Repository Layer";
 
 class LibraryRepository{
     
-    async CreateLibrary({owner, location, name}: Partial<Library>){
+    async CreateLibrary({owner, location, name, city, state, about, address}: Partial<Library>){
 
         try{
-            const LibraryData = new LibraryModel({owner, location, name});
+            const LibraryData = new LibraryModel({owner, location, name, city, state, about, address});
             await LibraryData.save()
 
-            return {err: null, data:LibraryData, message: "Succefully Created yess"};
+            return { success: true, err: null, data:LibraryData, message: "Succefully Created yess"};
         }catch(e){
             console.log(errorMessage, e);
             
@@ -42,21 +42,32 @@ class LibraryRepository{
 
     async FetchLibraryData(_id:string){
         try{
-            const Libraries = await LibraryModel.findById(_id).select("books name owner location revenue").populate("books");
+            const Libraries = await LibraryModel.findById(_id).populate("books");
+            // const Libraries = await LibraryModel.findById(_id).select("books name owner location revenue").populate("books");
            
-            if(Libraries) return {err: null, data: Libraries, message: "Successful"};
-            return {err: true, data: null, message: "No Libraries found."}
+            if(Libraries) return {error: null, data: Libraries, success:true};
+            return {error: true, data: null, success:false}
             
         }catch(e){
             console.log(errorMessage, e);
             
-            return {err: e, data: null, message:"Server Error"};
+            return {error: e, data: null, success:false};
+        }
+    }
+
+    async GetAllLibrariesWithUserID({uid}: {uid:string}){
+        try{
+            const libraries = await LibraryModel.find({owner:uid}).populate({path:'books', populate:{path:'borrowRequest'}}).lean();
+            return {success: true, data: libraries, error: null}
+        }catch(e){
+            console.log('Error while fetching libraries with userID', e);
+            return {success: false, data: null, error: e}
         }
     }
     
     async GetAllLibraries() {
         try{
-            const libraries = await LibraryModel.find({});
+            const libraries = await LibraryModel.find({}).populate('books');
             return {success: true, data: libraries, error:null}
         }catch(e){
             console.log('Error at library repository layer', e);
@@ -64,7 +75,54 @@ class LibraryRepository{
         }
     }
     
-    
+    async GetLibrariesWithLatAndLong({latitude, longitude} : {latitude:number, longitude:number}){
+        try {
+            const libraries = await LibraryModel.aggregate([
+                {
+                    $geoNear: {
+                        near: {type:"Point", coordinates:[latitude,longitude]},
+                        key: "location",
+                        maxDistance: 1000*1000,
+                        distanceMultiplier: 1 / 1000,
+                        distanceField: "dist.calculated",
+                        spherical: true
+                    }
+                },
+                {
+                    $addFields:{
+                        photo: {$toObjectId: {$first: '$books'}}
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'books',
+                        localField: 'photo',
+                        foreignField: '_id',
+                        as: 'books',
+                    },
+                },
+                
+                {
+                    $unwind: '$books',
+                },
+                {
+                    $set: {
+                        "photo": {$first: "$books.photos"}
+                    }
+                },
+                { 
+                    $project: {
+                        books: 0 
+                    } 
+                }
+                
+            ])
+            return {success:true, data:libraries, error: null};
+        } catch (error) {
+            console.log('error while getting libraries with lat and long from db:', error);
+            return {success: false, data: null, error}
+        }
+    }
 }
 
 export {LibraryRepository};

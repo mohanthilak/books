@@ -19,7 +19,7 @@ class UserService{
             if(data.success && data.data){
                 const user = data.data;
                 const {accessToken, refreshToken} = await this.CreateAuthTokens({email: user.email, _id: user._id})
-                return {success: true, data: {uid: user._id,accessToken, refreshToken, name: user.name, profilePicture: user.profilePicture},  message: "User Created"};
+                return {success: true, data: {uid: user._id,accessToken, refreshToken, verificationStatus:user.verificationStatus, name: user.name, profilePicture: user.profilePicture},  message: "User Created"};
             }
 
             return {success: false, data: null, message: 'Username Already Exists'}; 
@@ -59,7 +59,6 @@ class UserService{
             if(tokensData.success){
                 const userData = await this.GetUserWithID({uid});
                 if(userData.success){
-                    console.log(userData.data)
                     return {success: true, data: {...tokensData.data, name:userData.data?.name, profilePicture:userData.data?.profilePicture, currentLocation:{latitude: userData.data?.currentLocation?.coordinates[0], longitude: userData.data?.currentLocation?.coordinates[1]} }}
                 }
                 return userData;
@@ -108,7 +107,7 @@ class UserService{
     
     private async CreateAuthTokens({email, _id}: userAuthDataInterface): Promise<AuthTokens> {
         const accessToken = sign({email, _id}, ACCESS_TOKEN_SECRET, { expiresIn: "30m" });
-        const refreshToken = sign({email, _id}, REFRESH_TOKEN_SECRET);
+        const refreshToken = sign({email, _id}, REFRESH_TOKEN_SECRET, {expiresIn: "1d"});
         this.repository.AddRefreshToken(refreshToken, _id);
         return {accessToken, refreshToken}
     }
@@ -124,13 +123,13 @@ class UserService{
                 if(userExists.success){
                     if(userExists.data){
                         const {accessToken, refreshToken} = await this.CreateAuthTokens({email, _id: userExists.data._id});
-                        return {success: true,data: {uid: userExists.data._id, accessToken, refreshToken, name, profilePicture: picture}, error: null}
+                        return {success: true,data: {uid: userExists.data._id, verificationStatus: userExists.data.verificationStatus, accessToken, refreshToken, name, profilePicture: picture}, error: null}
                     }
                     const data = await this.repository.GoogleSignUp({name, googleID: sub, email, profilePicture: picture});
                     if(data.success){
                         const {accessToken, refreshToken} = await this.CreateAuthTokens({email, _id: data.data?._id});
                         // console.log("\n\n\n!@!@!@!@!",{uid: data.data?._id, accessToken, refreshToken, ...data.data})
-                        return {success: true, data: {uid: data.data?._id, accessToken, refreshToken, name, profilePicture: picture}, error: null}
+                        return {success: true, data: {uid: data.data?._id, accessToken, refreshToken, name,verificationStatus: data.data?.verificationStatus, profilePicture: picture}, error: null}
                     }
                     return data;
                 }
@@ -168,6 +167,28 @@ class UserService{
         return this.repository.UpdateUserLocation({latitude, longitude, uid});
     }
 
+
+    async UpdateUserName({firstName, lastName, uid}: {firstName: string, lastName: string, uid: string}){
+        if (firstName == "") return {success: false, data: null, error: "empty string"}
+        const name = firstName.concat(' ', lastName);
+        return this.repository.UpdateUserName({name, uid})
+    }
+
+    async UpdateUserPhoneNumber({phoneNumber, uid}:{phoneNumber:number, uid: string}){
+        let regex = /^[1-9][0-9]{9}$/
+        let isPhoneNumberOf10digits =regex.test(phoneNumber.toString()) 
+        if(!isPhoneNumberOf10digits) return {success: false, data: null, error: "invalid phone number"};
+        return this.repository.UpdatePhoneNumber({phoneNumber, uid})
+    }
+
+    async VerifyPhoneNumber({otp, phoneNumber,uid}: {otp: number, phoneNumber: number, uid: string}){
+        if (otp != 123456) return {success: false, data: null, error: "invalid OTP"} 
+        return this.repository.VerifyPhoneNumber({otp, phoneNumber, uid});
+    }
+
+    async FindUsersWithIDs({ids}: {ids: string[]}){
+        return this.repository.FindUsersWithIDs({ids});
+    }
     // async UpdateLocation(inputs: updateLocationInterface){
     //     const data = await this.repository.UpdateLocation(inputs)
     //     return data;

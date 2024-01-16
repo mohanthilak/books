@@ -1,8 +1,9 @@
-import {Book} from "../database/Models/Book";
-import {BooksRepository, LibraryRepository} from "../database"
-import {RequestBorrowBookInterface,AddBooksAPIInterface} from "../dto" 
 import { Channel } from "amqplib";
 import { NOTIFICATION_BINDING_KEY, NOTIFICATION_EXCHANGE } from "../config";
+import { BooksRepository, LibraryRepository } from "../database";
+import { Book, BorrowRequest } from "../database/Models/Book";
+import { AddBooksAPIInterface, RequestBorrowBookInterface } from "../dto";
+import axios from "axios";
 
 
 
@@ -16,8 +17,17 @@ class BooksService{
         this.LibraryRepo = LB;
     }
     
+    private GetPathsFromImagesObjArray(arr:any): string[]|null{
+        if(arr.length<0) return null;
+        const photosPathArray: string[] = [];
+        arr.forEach((el: any) => {
+            photosPathArray.push(el.path);
+        });
+        return photosPathArray;
+    }
+
     async CreateBook(obj: AddBooksAPIInterface){
-        
+        obj.photos = this.GetPathsFromImagesObjArray(obj.photos);
         const data = await this.BooksRepo.AddSingleBook(obj);
         
         if(!data.err && data.data){
@@ -35,13 +45,48 @@ class BooksService{
     async CreateMultipleBooks(arr: Partial<Book>[]){
         return await this.BooksRepo.AddMultipleBooks(arr);
     }
+
+
+    async GetBookDetailsForBorrower({id}: {id: string}){
+        return this.BooksRepo.GetBookDataByIDForBorrower({id});
+    }
     
     async GetBookDataById(_id: string){
-        return await this.BooksRepo.BookDataById(_id);
+        const bookData = await this.BooksRepo.BookDataById(_id);
+        if (bookData.success && bookData.data && bookData.data.borrowRequest.length > 0) {
+            let borroweres = bookData.data.borrowRequest as BorrowRequest[]
+            let ids = borroweres.map(e=>e.user)
+            let hydratedBorroweres:any;
+            await axios.post("http://localhost:4001/internal/get-users-with-ids",{ids}).then(res=>{
+                if(res.data.success){
+                    hydratedBorroweres = res.data.data;
+                    hydratedBorroweres.forEach((el: any) => {
+                        let timestamp, state;
+                        borroweres.forEach(e=>{
+                            if(e.user==el._id){
+                                el.timestamp= e.timestamp;
+                                const _id = el._id
+                                el.user = _id;
+                                el._id = e._id
+                                return;
+                            }
+                        })
+                        // console.log("timestamp:", timestamp, state)
+                    });
+                }
+            }).catch(e=>{
+                console.log("error while requesting for user details;", e)
+            });
+            return {...bookData, data: {...bookData.data, borrowRequest: hydratedBorroweres}}
+        }else return bookData
     }
     
     async GetSearchResultFromNameOrAuthor(inputString:string, latitude:number, longitude: number){
         return await this.BooksRepo.GetBookFromNameOrAuthor(inputString, latitude, longitude)
+    }
+
+    async GetNearestBooksAndUserFavs({latitude, longitude}: {latitude:number, longitude:number}){
+        return await this.BooksRepo.GetNearestBooksAndUserFavs({latitude, longitude});
     }
     
     async GetBookOwner(bookId:string){
@@ -63,6 +108,10 @@ class BooksService{
     GetAllBooks() {
         return this.BooksRepo.GetAllBooks();
     }
+
+    async IssueBook({requestID, issuedTo, bookID}: {requestID:string, issuedTo:string, bookID: string}){
+        return this.BooksRepo.IssueBook({requestID, issuedTo, bookID});
+    }
 }
 
-export {BooksService}
+export { BooksService };

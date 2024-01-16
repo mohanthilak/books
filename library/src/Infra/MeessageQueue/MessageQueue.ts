@@ -14,6 +14,7 @@ export const  CreateChannel = async ()=>{
         await channel.assertExchange(COMMON_EXCHANGE, 'direct', {durable: true});
         return channel;
     }catch(e){
+        console.log("error making connection to RabbitMQ:", e)
         throw e;
     }
 }

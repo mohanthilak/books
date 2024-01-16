@@ -12,10 +12,10 @@ class LibraryService{
         this.LibRepo = LB;
     }
     
-    async CreateLibrary({owner, location, name}: Partial<Library>, channel: Channel){
+    async CreateLibrary({owner, location, name,city, state, about, address}: Partial<Library>, channel: Channel){
 
         try{
-        const data = await this.LibRepo.CreateLibrary({owner, location, name});
+        const data = await this.LibRepo.CreateLibrary({owner, location, name, city, state, about, address});
         
         if(data.data && owner) PublishMessage(channel, USER_BINDING_KEY, JSON.stringify({operation:"AddLibraryToUser", data: {userId: owner, libraryId: data.data._id}}), USER_EXCHANGE)
         
@@ -28,12 +28,20 @@ class LibraryService{
 
     }
 
+    async GetAllLibrariesWithUserID({uid}: {uid:string}){
+        return this.LibRepo.GetAllLibrariesWithUserID({uid});
+    }
+
     async FetchLibraryData(_id:string){
         return await this.LibRepo.FetchLibraryData(_id);
     }
 
     async GetAllLibraries() {
         return await this.LibRepo.GetAllLibraries();
+    }
+
+    async GetLibrariesWithLatAndLong({latitude, longitude} : {latitude:number, longitude:number}){
+        return this.LibRepo.GetLibrariesWithLatAndLong({latitude, longitude});
     }
     
 }

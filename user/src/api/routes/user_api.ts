@@ -105,7 +105,6 @@ export const UserAPI = (app: Application, channel: Channel, service: UserService
                 const {token}:{token:string} = req.body;
                 const data = await service.GoogleSignAuthentication({token});
                 setCookie(res, data);
-                console.log("response:", data)
                 return res.status(200).json(data)
             }
             const {email, password}: signUpInterface = req.body;
@@ -113,13 +112,13 @@ export const UserAPI = (app: Application, channel: Channel, service: UserService
             
             if(data.success && data.data){
                 setCookie(res, data)
-                console.log("response:", {success: true, data:{uid: data.data.uid, accessToken: data.data.accessToken, refreshToken: data.data.refreshToken}, error: null}, "also available:", data)
+                // console.log("response:", {success: true, data:{uid: data.data.uid, accessToken: data.data.accessToken, refreshToken: data.data.refreshToken}, error: null}, "also available:", data)
                 return res.status(200).json({success: true, data:{uid: data.data.uid, accessToken: data.data.accessToken, refreshToken: data.data.refreshToken}, error: null});
             } 
 
             let statusCode = 200;    
             if(data.err){
-                console.log("response:", data)
+                // console.log("response:", data)
                 return res.status(statusCode).json({data})
             }
         }catch(e){
@@ -172,6 +171,7 @@ export const UserAPI = (app: Application, channel: Channel, service: UserService
             return res.json({requestSuccefull: false, message: "Server Error"})
         }
     })
+
     // /Sends a new access token after validating the refresh token
     app.post("/refresh", async (req, res) => {
     try {
@@ -179,7 +179,7 @@ export const UserAPI = (app: Application, channel: Channel, service: UserService
         if (!cookies?.rt) return res.sendStatus(403);
         const {rt, uid} = cookies;
         const data = await service.RefreshAccessTokenWithUserDetails(rt, uid);
-        console.log("response:", data)
+        console.log("/refresh response:", data)
         return res.status(200).json(data);
     } catch (e) {
         console.log("Error while handling refresh access token handler", e);
@@ -195,6 +195,56 @@ export const UserAPI = (app: Application, channel: Channel, service: UserService
         }catch(e){
             console.log("Error while handling update-location handler", e);
             return res.status(202).json({success: false, data: null, error: e});
+        }
+    })
+
+    app.post("/update-name",auth, async(req, res) => {
+        try {
+            const {firstName, lastName} = req.body;
+            const data = await service.UpdateUserName({firstName, lastName, uid: req.user?._id as string});
+            if (data.success) return res.status(200).json(data)
+            return res.status(401).json(data);
+        } catch (e) {
+            console.log("Error while handling update-location handler", e);
+            return res.status(202).json({success: false, data: null, error: e});
+
+        }
+    })
+
+    app.post("/update-phoneNumber", auth, async(req, res)=>{
+        try {
+           const {phoneNumber}:{phoneNumber: number} = req.body;
+           const data = await service.UpdateUserPhoneNumber({phoneNumber, uid: req.user?._id as string});
+           const statusCode = data.success ? 200 : 500;
+           return res.status(statusCode).json(data); 
+        } catch (e) {
+            console.log("Error while handling update-phoneNumber handler", e);
+            return res.status(500).json({success: false, data: null, error: e})
+        }
+    })
+
+    app.post("/phone-verification", auth, async(req, res)=>{
+        try {
+            const {otp, phoneNumber}: {otp: number, phoneNumber: number} = req.body;
+            console.log(typeof phoneNumber)
+            const data = await service.VerifyPhoneNumber({otp, phoneNumber, uid: req.user?._id as string});
+            const statusCode = data.success ? 200 : 401;
+            return res.status(statusCode).json(data);
+        } catch (e) {
+            console.log("Error while handling update-phoneNumber handler", e);
+            return res.status(500).json({success: false, data: null, error: e})
+        }
+    })
+
+
+    app.post("/internal/get-users-with-ids", async(req, res)=>{
+        try {
+            const {ids}: {ids: string[]} = req.body;
+            const data = await service.FindUsersWithIDs({ids})
+            return res.status(200).json(data)
+        } catch (e) {
+            console.log("Error while handling internal requeset of get users with ids", e);
+            return res.status(500).json({success: false, data: null, error: e})            
         }
     })
 }

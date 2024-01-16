@@ -28,6 +28,18 @@ export class Library{
     @prop({required: true})
     location: Location
 
+    @prop({})
+    city: string
+    
+    @prop({})
+    state: string
+    
+    @prop({})
+    address: string
+
+    @prop({})
+    about: string
+
     @prop({default: 0})
     revenue: number
 }

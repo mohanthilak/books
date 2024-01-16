@@ -12,6 +12,9 @@ export class RefreshTokens {
 
     @prop({ref:"User", type: ()=> String, required: true})
     user: Ref<User, string>;
+    
+    @prop({ expires: 86400 })
+    public expiresAt?: Date;
 }
 
 const RefreshTokensModel = getModelForClass(RefreshTokens);

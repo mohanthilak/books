@@ -39,6 +39,9 @@ export class User {
     @prop({})
     googleID: string
 
+    @prop({type: ()=>[String], default: ['phone-verification', 'email-verification', 'name-entry'],enum:['phone-verification', 'email-verification', 'name-entry']})
+    verificationStatus: string[]
+
     @prop({default: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQOaEB7ZWMMO32jsII22Bl8QGs5wxZpkhOQ3AjGp0DZqbXNuzJUX5PyyecGy2JeYd0kiVk&usqp=CAU"})
     profilePicture: string
     

@@ -16,8 +16,11 @@ export default async (app: Application)=>{
         methods: ['GET', 'POST'],
         credentials: true,
     }));
+    app.use((req, res, next)=>{
+        console.log("[",req.method, "],", req.url)
+        next()
+    })
     const channel = await CreateChannel();
-
     
     const booksRepository = new BooksRepository();
     const libraryRepository = new LibraryRepository();

@@ -1,6 +1,7 @@
 import {UserModel ,User} from "../Models/user";
 import {RefreshTokensModel} from "../Models/refreshToken"
 import { AddlibraryReturn, AddRefreshTokenReturn, DeleteRefreshTokenReturn, FindRefreshTokenReturn, GetPasswordReturn, GetUserWithEmailReturn, signUpInterface, signUpInterfaceReturn } from "../../dto";
+import mongoose from "mongoose";
 
 export interface UserRepositoryInterface {
     // CreateUser( inputs: signUpInterface): Promise<signUpInterfaceReturn>
@@ -22,7 +23,7 @@ class UserRepository implements UserRepositoryInterface {
             await user.save();
             
             console.log("user created!", user.email)
-            const data = {email: user.email, _id: user._id, name: user.name, profilePicture: user.profilePicture}
+            const data = {email: user.email, _id: user._id, name: user.name, profilePicture: user.profilePicture, verificationStatus: user.verificationStatus}
             return {success: true, data, error: null};
 
         }catch(e: any){
@@ -38,6 +39,8 @@ class UserRepository implements UserRepositoryInterface {
     async GoogleSignUp({name, googleID, email, profilePicture}: {name: string, googleID: string, email:string, profilePicture: string}){
         try{
             const user = new UserModel({name, googleID, email, profilePicture});
+            let index = user.verificationStatus.indexOf('name-entry')
+            user.verificationStatus.splice(index, 1);
             await user.save();
             return {success: true, data: user, error: null};
         }catch(e){
@@ -114,8 +117,7 @@ class UserRepository implements UserRepositoryInterface {
 
     async AddRefreshToken(token:string, uid:string):Promise<AddRefreshTokenReturn>{
         try{
-            console.log("Adding REfresh Token");
-            const refreshToken = new RefreshTokensModel({refreshToken: token, user: uid});
+            const refreshToken = new RefreshTokensModel({refreshToken: token, user: uid, expiresAt: new Date()});
             await refreshToken.save();
             return {error:false}
         }catch(e){
@@ -154,7 +156,7 @@ class UserRepository implements UserRepositoryInterface {
             const user = await UserModel.findById(uid);
             if(user){
                 user.libraries.push(lid);
-                user.save()
+                await user.save()
             }
             return {err: false, message: "Successful"}
         }catch(e){
@@ -169,7 +171,7 @@ class UserRepository implements UserRepositoryInterface {
             if(user){
                 const loc: {type:string, coordinates: [number, number]} = {type: "Point", coordinates: [latitude, longitude]};
                 user.currentLocation = loc;
-                user.save();
+                await user.save();
                 const newUser = user.toObject()
                 const {password, ...userDataWithoutPassword} = newUser;
                 return {success: true, data: userDataWithoutPassword, error: null}; 
@@ -180,6 +182,106 @@ class UserRepository implements UserRepositoryInterface {
             return {success: false, data: null, error: e}
         }
     }
+
+    async UpdateUserName({name, uid}:{name:string, uid: string}){
+        try {
+            const result = await UserModel.findById(uid);
+            if(result){
+                result.name = name;
+                let index = result.verificationStatus.indexOf('name-entry');
+                if(index !== -1) result.verificationStatus.splice(index, 1)
+                console.log(result);
+                await result.save();
+                return {success: true, data:result, error: null}
+            }
+            return {success: false, data: null, error: "user not found"}
+        } catch (e) {
+            console.log("Error while Updatating user's name at repository layer", e);
+            return {success: true, data: null, error: e}
+        }
+    }
+    
+    async UpdatePhoneNumber({phoneNumber, uid}:{phoneNumber:number, uid: string}){
+        try {
+            const result = await UserModel.findById(uid);
+            if(result){
+                result.phoneNumber = phoneNumber;
+                await result.save();
+                return {success: true, data:result, error: null}
+            }
+            return {success: false, data: null, error: "user not found"}
+        } catch (e) {
+            console.log("Error while Updatating user's phone Number at repository layer", e);
+            return {success: true, data: null, error: e}
+        }
+    }
+
+    async SetPhoneVerification({uid}: {uid: string}) {
+        try {
+            const user = await UserModel.findById(uid);
+            if (user){
+                let index = user.verificationStatus.indexOf('phone-verification')
+                user.verificationStatus.splice(index, 1);
+                await user.save();
+                return {success: true, data: user, error: null}    
+            }
+            return {success: false, data: null, error: 'user not found'}
+        } catch (e) {
+            console.log("Error while setting user's phone verification status at repository layer", e);
+            return {success: true, data: null, error: e}
+        }
+    }
+    
+    async SetEmailVerification({uid}: {uid: string}) {
+        try {
+            const user = await UserModel.findById(uid);
+            if (user){
+                let index = user.verificationStatus.indexOf('email-verification')
+                user.verificationStatus.splice(index, 1);
+                await user.save();
+                return {success: true, data: user, error: null}    
+            }
+            return {success: false, data: null, error: 'user not found'}
+        } catch (e) {
+            console.log("Error while setting user's email verification status at repository layer", e);
+            return {success: true, data: null, error: e}
+        }
+    }
+
+    async VerifyPhoneNumber({otp, phoneNumber, uid}: {otp:number, phoneNumber: number, uid: string}){
+        try {
+            const user = await UserModel.findById(uid);
+
+            if (user){
+                console.log(typeof user.phoneNumber, typeof phoneNumber)
+                if(user.phoneNumber !== phoneNumber) return {success: false, data: null, error: "invalid-phoneNumber"}
+                let index = user.verificationStatus.indexOf('phone-verification');
+                if (index != -1) user.verificationStatus.splice(index, 1);
+                user.save()
+                return {success: true, data: user, error: null};
+            }
+            return {success: false, data: null, error: "invalid user-id"}
+        } catch (e) {
+            console.log("Error while verifying user's phone number with otp at repository layer", e);
+            return {success: true, data: null, error: e}
+        }
+    }
+    
+    async FindUsersWithIDs({ids}: {ids: string[]}){
+        try {
+            const objectIDs = ids.map(el=>{
+                return new mongoose.Types.ObjectId(el)
+            })
+            const users = await UserModel.find({_id: {$in: [...ids]}}).select('-password')
+            console.log("users", users)
+            return {success: true, data: users, error: null};
+        } catch (e) {
+            console.log("error while get users from user id array:", e);
+            return {success: false, data: null, error: e}
+        }
+    }
+
+
 
     // async UpdateLocation(inputs: updateLocationInterface){
     //     try{

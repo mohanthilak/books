@@ -7,6 +7,7 @@ import {UserAPI} from "./api/routes/user_api"
 import { UserService } from "./services";
 import {CreateChannel, SubscribeMessage} from "./utils"
 import { RepositoryDependency, ServiceDependency } from "./dependencyClass";
+import { Channel } from "amqplib";
 
 
 export default async (app: Application )=>  {
@@ -25,17 +26,23 @@ export default async (app: Application )=>  {
         next();
     })
 
-    const channel = await CreateChannel();
+    let channel: Channel;
+    try{
+        channel = await CreateChannel();
+        const repository = new UserRepository();
+        const service = new UserService(repository);
+        
+        const SD = new ServiceDependency(service);
+        const RD = new RepositoryDependency(repository);
+        SubscribeMessage(channel, SD, RD);
+
+        UserAPI(app, channel, service)
+    }catch(e){
+        console.log("error in creating a new rabbitmq channel", e)
+    }
 
 
     
-    const repository = new UserRepository();
-    const service = new UserService(repository);
     
-    const SD = new ServiceDependency(service);
-    const RD = new RepositoryDependency(repository);
-    SubscribeMessage(channel, SD, RD);
-
-    UserAPI(app, channel, service)
 
 }

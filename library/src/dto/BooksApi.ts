@@ -8,6 +8,8 @@ export interface AddBooksAPIInterface {
     priceOfBorrowing: number,
     library: string,
     owner: string
+    about: string,
+    photos: any,
 }
 
 

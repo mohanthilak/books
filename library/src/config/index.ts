@@ -16,6 +16,10 @@ export const ACCESS_TOKEN_SECRET = <string>process.env.ACCESS_TOKEN_SECRET;
 // export const ACCESS_TOKEN_SECRET = <string>process.env.REFRESH_TOKEN_SECRET;
 export const MESSAGE_BROKER_URL = <string>process.env.MESSAGE_BROKER_URL;
 
+export const CLOUDINARY_SECRET = <string>process.env.CLOUDINARY_SECRET
+export const CLOUDINARY_KEY = <string>process.env.CLOUDINARY_KEY
+export const CLOUDINARY_CLOUD_NAME = <string>process.env.CLOUDINARY_CLOUD_NAME
+
 export const COMMON_EXCHANGE = "COMMON_EXCHANGE";
 export const USER_EXCHANGE = "USER_EXCHANGE";
 export const LIBRARY_EXCHANGE = "LIBRARY_EXCHANGE";
