@@ -90,11 +90,10 @@ class UserService{
     
     async GetUser({email, _id}:userAuthDataInterface){
         try{
-            const data = await this.repository.GetUserWithEmail({email, _id});
-            return data;
+            return await this.repository.GetUserWithEmail({email, _id});
         }catch(e){
             console.log("Error at service layer", e);
-            return {err: true, userfound: false, message: "Error", data: false};
+            return {success: false, data: false, error: e};
         }
     }
     

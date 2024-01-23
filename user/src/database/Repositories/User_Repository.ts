@@ -7,7 +7,7 @@ export interface UserRepositoryInterface {
     // CreateUser( inputs: signUpInterface): Promise<signUpInterfaceReturn>
     GetPasswordWithEmailAndID({email, password}: signUpInterface): any
     DeleteRefreshToken(refreshTokenToBeDeleted:string, uid:string): Promise<DeleteRefreshTokenReturn>
-    GetUserWithEmail({email, _id}:{email: string, _id: string}): Promise<GetUserWithEmailReturn>
+    // GetUserWithEmail({email, _id}:{email: string, _id: string}): Promise<GetUserWithEmailReturn>
     AddRefreshToken(token:string, uid:string): Promise<AddRefreshTokenReturn>
     FindRefreshToken(token:string, uid:string): Promise<FindRefreshTokenReturn>
     Addlibrary(uid:string, lid:string): Promise<AddlibraryReturn>
@@ -91,16 +91,13 @@ class UserRepository implements UserRepositoryInterface {
         }
     }
 
-    async GetUserWithEmail({email, _id}:{email: string, _id: string}): Promise<GetUserWithEmailReturn>{
+    async GetUserWithEmail({email, _id}:{email: string, _id: string}){
         try{
             let user = await UserModel.findOne({ email, _id }).select("-password").lean();
-            if(user)
-                return {err: false, userExists: true, data:{email: user.email, _id:user._id, libraries:user.libraries}, message: "Successfully Retrived details"};
-            else
-                throw {message: 'user does not exits'};
-        }catch(e:any){
+            return {success: user ? true : false, data: user, error: user ? null: "user-not-found"}
+        }catch(e){
             console.log("Error at the repository layer: ", e);
-            return {err: true, userExists: false, data: null, message: e.message};
+            return {success: false, data: null, error:e};
         }
     }
 

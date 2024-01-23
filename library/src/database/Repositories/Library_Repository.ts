@@ -123,6 +123,60 @@ class LibraryRepository{
             return {success: false, data: null, error}
         }
     }
+
+    async GetSearchResultFromLibraryName({searchText, latitude, longitude}:{searchText:string, latitude:number, longitude:number}){
+        try {
+            const libraries = await LibraryModel.aggregate([
+                {
+                    $geoNear: {
+                        near: {type:"Point", coordinates:[longitude,latitude]},
+                        key: "location",
+                        maxDistance: 1000*1000,
+                        distanceMultiplier: 1 / 1000,
+                        distanceField: "dist.calculated",
+                        spherical: true
+                    }
+                },
+                {
+                    $match: {$or: [
+                        {'name': {"$regex":searchText, "$options": "i"}}
+                    ]}
+                },
+                {
+                    $addFields:{
+                        photo: {$toObjectId: {$first: '$books'}}
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'books',
+                        localField: 'photo',
+                        foreignField: '_id',
+                        as: 'books',
+                    },
+                },
+                
+                {
+                    $unwind: '$books',
+                },
+                {
+                    $set: {
+                        "photo": {$first: "$books.photos"}
+                    }
+                },
+                { 
+                    $project: {
+                        books: 0 
+                    } 
+                }
+            ]);
+            console.log('libraries:', libraries)
+            return {success: true, data: libraries, error: null}
+        } catch (error) {
+            console.log("error at library respository layer:", error);
+            return {success: true, data: null, error}
+        }
+    }
 }
 
 export {LibraryRepository};

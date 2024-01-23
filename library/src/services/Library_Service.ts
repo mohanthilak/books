@@ -43,6 +43,10 @@ class LibraryService{
     async GetLibrariesWithLatAndLong({latitude, longitude} : {latitude:number, longitude:number}){
         return this.LibRepo.GetLibrariesWithLatAndLong({latitude, longitude});
     }
+
+    async GetSearchResultFromLibraryName({searchText, latitude, longitude}: {searchText:string, latitude:number, longitude:number}){
+        return this.LibRepo.GetSearchResultFromLibraryName({searchText, latitude, longitude});
+    }
     
 }
 

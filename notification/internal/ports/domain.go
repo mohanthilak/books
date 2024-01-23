@@ -1,20 +1,20 @@
 package ports
 
-type RelatedUserStructR struct {
+type RelatedUserStruct struct {
 	User      string `json:"user"`
 	Timestamp int64  `json:"timestamp"`
 	RequestID string `json:"_id"`
 }
 
-type NotifyLenderMessageStructR struct {
-	Data        string             `json:"data"`
-	RelatedUser RelatedUserStructR `json:"relatedUser"`
-	Lender      string             `json:"lender"`
+type NotifyLenderMessageStruct struct {
+	Data        string            `json:"data"`
+	RelatedUser RelatedUserStruct `json:"relatedUser"`
+	Lender      string            `json:"lender"`
 }
 
-type NotifyLenderStructR struct {
-	Type    string                     `json:"type"`
-	Message NotifyLenderMessageStructR `json:"message"`
+type RequestNotifyLenderStruct struct {
+	Type    string                    `json:"type"`
+	Message NotifyLenderMessageStruct `json:"message"`
 }
 
 type NotifyLenderStruct struct {

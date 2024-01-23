@@ -9,21 +9,26 @@ import (
 	"os/signal"
 	"time"
 
+	"Notifications/internal/ports"
 	"Notifications/internal/ports/httpserver"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
+type RouteHandlerType func(w http.ResponseWriter, r *http.Request) error
+
 type Adapter struct {
 	router *mux.Router
 	addr   string
+	app    ports.ApplicationInterface
 }
 
-func NewAdapter(router *mux.Router, addr string) httpserver.HttpServerInterface {
+func NewAdapter(router *mux.Router, addr string, app ports.ApplicationInterface) httpserver.HttpServerInterface {
 	return &Adapter{
 		router: router,
 		addr:   addr,
+		app:    app,
 	}
 }
 
@@ -33,13 +38,15 @@ func (adpt *Adapter) initiateRoutes() {
 		w.Header().Add("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]bool{"success": true})
 	})
+	adpt.router.HandleFunc("/{uid}", adpt.CreateHandler(adpt.GetUserNotifications)).Methods("GET")
 }
 
 func (adpt *Adapter) Start(rabbitMQCloseFunc func(), mongoDBCloseFunc func()) {
 	adpt.initiateRoutes()
+
 	server := http.Server{
 		Addr:         "127.0.0.1:" + adpt.addr,
-		Handler:      handlers.CORS(handlers.AllowCredentials(), handlers.AllowedOrigins([]string{"*"}))(adpt.router),
+		Handler:      handlers.CORS(handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"}), handlers.AllowCredentials(), handlers.AllowedHeaders([]string{"X-Requested-With", "Authorization", "Content-Type"}), handlers.AllowedOrigins([]string{"http://localhost:3000", "http://localhost:4000"}))(adpt.router),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
@@ -73,4 +80,45 @@ func (adpt *Adapter) Start(rabbitMQCloseFunc func(), mongoDBCloseFunc func()) {
 	//gracefully shutdown the server, waiting max 300 second for current operations to complete
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
 	server.Shutdown(ctx)
+}
+
+func (A *Adapter) CreateHandler(controller RouteHandlerType) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		//call the controller
+		if err := controller(w, r); err != nil {
+			clientError, ok := err.(*HttpErrorStruct)
+			if !ok {
+				A.WriteJSONResponse(w, 500, "server-error", nil)
+				return
+			}
+			body := clientError.ResponseBody() // Try to get response body of ClientError.
+
+			status, _ := clientError.ResponseHeaders() // Get http status code and headers.
+			// for k, v := range headers {
+			// 	w.Header().Set(k, v)
+			// }
+			log.Printf("body: %+v", body)
+			A.WriteJSONResponse(w, status, body, nil)
+		}
+	}
+}
+
+func (A Adapter) WriteJSONResponse(w http.ResponseWriter, status int, v any, headers map[string]string) {
+
+	if headers == nil {
+		w.Header().Add("Content-Type", "application/json")
+	} else {
+		for k, v := range headers {
+			w.Header().Set(k, v)
+		}
+	}
+
+	w.WriteHeader(status)
+
+	if v != nil {
+		if err := json.NewEncoder(w).Encode(v); err != nil {
+			log.Println("error while encoding json to the response:", err)
+		}
+	}
+
 }

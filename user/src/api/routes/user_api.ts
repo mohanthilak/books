@@ -159,10 +159,7 @@ export const UserAPI = (app: Application, channel: Channel, service: UserService
         try{
             if(req.user){
                 const data = await service.GetUser(req.user)
-                if(data.err)
-                    return res.json({status: 501, data })
-                else if(data.data)
-                    return res.json({status: 200, data: data.data})
+                return res.status(data.success?200:500).json(data)
             }else{
                 return res.sendStatus(404).send({message: "User Not Found"})
             }

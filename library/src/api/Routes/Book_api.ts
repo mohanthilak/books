@@ -74,13 +74,14 @@ export const BooksAPI = (app:Application, channel: Channel, service: ServiceDepe
     })
 
 
-    app.get("/book/search/:stringInput/:longitude/:latitude", async(req:Request, res:Response)=>{
+    app.get("/book/search/:searchText/:longitude/:latitude", async(req:Request, res:Response)=>{
         
-        const {stringInput, latitude, longitude} = req.params;
+        const {searchText, latitude, longitude} = req.params;
 
-        const data = await service.booksService.GetSearchResultFromNameOrAuthor(stringInput,parseFloat(latitude), parseFloat(longitude) );
-        
-        return res.status(data.success ? 200 : 500).json(data)
+        const booksData = await service.booksService.GetSearchResultFromNameOrAuthor(searchText,parseFloat(latitude), parseFloat(longitude) );
+        const libsData = await service.libraryService.GetSearchResultFromLibraryName({searchText, latitude: parseFloat(latitude), longitude: parseFloat(longitude)});
+        const data = {libraries: libsData.data , books: booksData.data}
+        return res.status(booksData || libsData ? booksData && libsData ? 200 :207 : 500).json({success: booksData || libsData ? true : false, data, error: null})
     })
     
     
@@ -100,6 +101,7 @@ export const BooksAPI = (app:Application, channel: Channel, service: ServiceDepe
             const {book_id, timestamp} = req.body;
             console.log(req.user)
             const data = await service.booksService.InitiateBorrowRequest({book_id, timestamp, uid: <string>req.user?._id}, channel);
+            
             return res.status(200).json(data)
         }catch(e){
             console.log("Error while handling the request borrow request", e);

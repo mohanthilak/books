@@ -7,16 +7,14 @@ import (
 	"strings"
 	"time"
 
-	"Notifications/internal/ports"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Adapter struct {
-	mongoURI string
-	client   *mongo.Client
+	mongoURI               string
+	client                 *mongo.Client
+	notificationCollection *mongo.Collection
 }
 
 func NewAdapter(uri string) *Adapter {
@@ -29,6 +27,8 @@ func (A *Adapter) MakeConnection() {
 		panic(err)
 	}
 	A.client = client
+
+	A.notificationCollection = A.client.Database("BookAppNotification").Collection("LibraryNotification")
 }
 
 func askDeleteDB() bool {
@@ -66,16 +66,4 @@ func (A *Adapter) CloseConnection() {
 	if err := A.client.Disconnect(context.TODO()); err != nil {
 		panic(err)
 	}
-}
-
-func (A *Adapter) InsertBorrowReturnRequest(obj *ports.NotifyLenderStruct) error {
-	coll := A.client.Database("BookAppNotification").Collection("LibraryNotification")
-	result, err := coll.InsertOne(context.TODO(), obj)
-	if err != nil {
-		log.Fatal("Error while inserting document to Notification collection", err)
-		return err
-	}
-	id := result.InsertedID.(primitive.ObjectID).Hex()
-	obj.ID = id
-	return nil
 }

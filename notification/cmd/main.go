@@ -41,6 +41,6 @@ func main() {
 	messageQueueAdapter := MessageQueue.NewAdapter(RabbitMQ_URL, app)
 	go messageQueueAdapter.MakeConnection()
 
-	httpServerAdapter := httpserver.NewAdapter(router, *listenAddr)
+	httpServerAdapter := httpserver.NewAdapter(router, *listenAddr, app)
 	httpServerAdapter.Start(messageQueueAdapter.CloseConnection, MongoAdapter.CloseConnection)
 }

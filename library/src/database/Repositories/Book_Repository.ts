@@ -21,7 +21,6 @@ class BooksRepository{
             const book = await BookModel.findById(book_id).populate('borrowRequest');
             if(book){
                 const obj = {user: uid, timestamp}
-                console.log(book)
                 if(book.borrowRequest){
                     const requests = book.borrowRequest as BorrowRequest[]
                     for (let index = 0; index < requests.length; index++) {
@@ -78,7 +77,7 @@ class BooksRepository{
 
     async GetBookDataByIDForBorrower({id}: {id: string}){
         try {
-            const book = await BookModel.findById(id).populate('library').lean();
+            const book = await BookModel.findById(id).populate('library borrowRequest').lean();
             return {success: true, data:book, error: null}
         } catch (e) {
             console.log("Error while getting book details by id for borrower from BookRepo layer:", e);

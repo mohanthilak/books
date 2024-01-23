@@ -34,3 +34,7 @@ func (app *Application) NotifyLender(data ports.NotifyLenderStruct) error {
 
 	return nil
 }
+
+func (app *Application) GetUserDisplayNotificationsWithUserID(uid string) ([]ports.NotifyLenderStruct, error) {
+	return app.DB.GetUserDisplayNotifications(uid)
+}

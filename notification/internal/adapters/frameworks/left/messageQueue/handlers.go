@@ -12,7 +12,7 @@ func trialHandler(body message, app ports.ApplicationInterface) bool {
 }
 
 func notifyLenderHandler(body message, app ports.ApplicationInterface) bool {
-	var data ports.NotifyLenderStructR
+	var data ports.RequestNotifyLenderStruct
 	if err := json.Unmarshal(body.Data, &data); err != nil {
 		log.Println("Error while converting queue data from json")
 	}

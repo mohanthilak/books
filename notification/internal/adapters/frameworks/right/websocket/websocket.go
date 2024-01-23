@@ -41,6 +41,7 @@ func (adpt *Adapter) Start() {
 func (adpt Adapter) handleSocketRoute(w http.ResponseWriter, r *http.Request) {
 	log.Println("New Connection")
 
+	// Currently it's set to all origin, need to fetch the domain from the request and move forward accordingly
 	upgrader.CheckOrigin = func(r *http.Request) bool {
 		return true
 	}
@@ -49,6 +50,8 @@ func (adpt Adapter) handleSocketRoute(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("failed to upgrade connection to full duplex")
 	}
+
+	// Currently uid is hardcoded to "123", need to fetch the userID from the requeset.
 	client := newClient(conn, adpt.manager, "123")
 	adpt.manager.AddClient(client)
 
@@ -63,7 +66,7 @@ func (adpt Adapter) CheckAvailable(clinetID string) bool {
 	return false
 }
 
-func (adpt Adapter) SendMessage(clientID, msgType string, mes []byte) error {
+func (adpt *Adapter) SendMessage(clientID, msgType string, mes []byte) error {
 	if isOnline := adpt.CheckAvailable(clientID); !isOnline {
 		log.Printf("User: %s Offline", clientID)
 		return errors.New("user offline")
@@ -72,6 +75,7 @@ func (adpt Adapter) SendMessage(clientID, msgType string, mes []byte) error {
 		Type:    msgType,
 		Payload: mes,
 	}
+	log.Printf("%+v", adpt.manager)
 	adpt.manager.Clients["123"].engres <- event
 	return nil
 }

@@ -47,6 +47,9 @@ export class User {
     
     @prop({})
     phoneNumber: number
+    
+    @prop({required: true, default:0})
+    deposit: number
 
     @prop()
     libraries: string[];
