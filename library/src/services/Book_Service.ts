@@ -92,13 +92,41 @@ class BooksService{
     async GetBookOwner(bookId:string){
         return await this.BooksRepo.GetOwner(bookId);
     }
+    private async CheckSufficientDeposit({book_id, uid}:{book_id: string, uid: string}){
+        try {
+            const BookDetails = await this.GetBookDetailsForBorrower({id: book_id});
+            if(!BookDetails.success) return BookDetails;
+            const priceOfBorrowing = BookDetails.data?.priceOfBorrowing as number;
+            
+            let response
+            await axios.get(`http://localhost:4001/wallet/internal/${uid}`).then(res=>{
+                const {data} = res.data;
+                if(!data) return res.data
+                const deposit = data.amount;
+    
+                if(priceOfBorrowing > deposit) response = {success: false, data: null, error:"Inssufficient Deposit"};
+                response =  {success: true, data: null, error: null};
+            }).catch(err=>{
+                console.log("axios error", err)
+                if(err.response?.data) response = err.response.data
+                else response = {success: false, data:null, error: err}
+            })
+            return response
+        } catch (error) {
+            console.log("error while checking the deposit in book service layer:", error);
+            return {success: false, data: null, error}
+        }
+    }
     
     async InitiateBorrowRequest({ book_id, timestamp, uid}:RequestBorrowBookInterface, channel: Channel) {
         try{
+            const userDeposit = await this.CheckSufficientDeposit({book_id, uid});
+            if(!userDeposit?.success) return userDeposit;
+
             const repoResponse = await this.BooksRepo.BorrowRequest({book_id, timestamp, uid});
             if(repoResponse.success){
                 console.log("sending message to notification service!")
-                channel.publish(NOTIFICATION_EXCHANGE, NOTIFICATION_BINDING_KEY, Buffer.from(JSON.stringify({fromService: "library", operation: "Notify-lender", data:{type:"all", message: {data: `A user has requested for the book ${repoResponse.data?.name}`, lender:repoResponse.data?.owner, relatedUser: repoResponse.data?.borrowRequest[repoResponse.data?.borrowRequest.length-1]}}})))
+                channel.publish(NOTIFICATION_EXCHANGE, NOTIFICATION_BINDING_KEY, Buffer.from(JSON.stringify({fromService: "library", operation: "Notify-lender-borrow", data:{type:"all", message: {data: `A user has requested for the book ${repoResponse.data?.name}`, lender:repoResponse.data?.owner, relatedUser: repoResponse.data?.borrowRequest[repoResponse.data?.borrowRequest.length-1]}}})))
             }
             return repoResponse;
         }catch(e){

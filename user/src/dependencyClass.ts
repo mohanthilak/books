@@ -1,10 +1,16 @@
 import { UserRepository } from "./database";
 import { UserService } from "./services";
+import {TransactionService} from "./services/Transaction_Service"
+import { WalletService } from "./services/Wallet_Service";
 
 class ServiceDependency {
-    private readonly userService;
-    constructor(US: UserService){
+    userService;
+    TransactionService;
+    WalletService;
+    constructor(US: UserService, TS: TransactionService, WS:WalletService){
         this.userService = US;
+        this.TransactionService = TS;
+        this.WalletService = WS;
     }
 }
 
@@ -16,7 +22,3 @@ class RepositoryDependency {
 }
 
 export {ServiceDependency, RepositoryDependency};
-
-// export const GetServicesObj = (us: UserService): ServiceDependency=>{
-//     return new ServiceDependency(us);
-// }

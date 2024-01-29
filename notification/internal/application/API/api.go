@@ -8,14 +8,16 @@ import (
 )
 
 type Application struct {
-	socket websokcetserver.WebSocketServerInterface
-	DB     ports.DBInterface
+	socket   websokcetserver.WebSocketServerInterface
+	DB       ports.DBInterface
+	payments ports.PaymentsInterface
 }
 
-func New(socket websokcetserver.WebSocketServerInterface, DB ports.DBInterface) *Application {
+func New(socket websokcetserver.WebSocketServerInterface, DB ports.DBInterface, payments ports.PaymentsInterface) *Application {
 	return &Application{
-		socket: socket,
-		DB:     DB,
+		socket:   socket,
+		DB:       DB,
+		payments: payments,
 	}
 }
 
@@ -37,4 +39,8 @@ func (app *Application) NotifyLender(data ports.NotifyLenderStruct) error {
 
 func (app *Application) GetUserDisplayNotificationsWithUserID(uid string) ([]ports.NotifyLenderStruct, error) {
 	return app.DB.GetUserDisplayNotifications(uid)
+}
+
+func (app *Application) InitiateTransaction(amount int32, receipt string) (map[string]interface{}, error) {
+	return app.payments.CreateOrder(50000, "123321")
 }

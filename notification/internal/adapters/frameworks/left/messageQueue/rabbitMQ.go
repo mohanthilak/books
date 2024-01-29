@@ -29,7 +29,7 @@ func NewAdapter(url string, api ports.ApplicationInterface) *Adapter {
 
 func (adpt *Adapter) setUpHandlers() {
 	adpt.handlers["Trial"] = trialHandler
-	adpt.handlers["Notify-lender"] = notifyLenderHandler
+	adpt.handlers["Notify-lender-borrow"] = notifyLenderHandler
 }
 
 func (adpt *Adapter) CloseConnection() {

@@ -6,6 +6,7 @@ import (
 
 	httpserver "Notifications/internal/adapters/frameworks/left/httpServer"
 	MessageQueue "Notifications/internal/adapters/frameworks/left/messageQueue"
+	payments "Notifications/internal/adapters/frameworks/right/Payments"
 	"Notifications/internal/adapters/frameworks/right/database"
 	"Notifications/internal/adapters/frameworks/right/websocket"
 	applicationAPI "Notifications/internal/application/API"
@@ -24,6 +25,8 @@ func main() {
 	RabbitMQ_URL := viper.Get("RABBITMQ_URL").(string)
 	DefaultPort := viper.Get("PORT").(string)
 	MongoURI := viper.Get("MONGO_URI").(string)
+	RazorpayAPIKey := viper.Get("RAZORPAY_API_KEY").(string)
+	RazorpayKeySecret := viper.Get("RAZORPAY_KEY_SECRET").(string)
 
 	// Fetching the PORT NUMBER from the CLI
 	listenAddr := flag.String("port", DefaultPort, "the server address")
@@ -37,7 +40,10 @@ func main() {
 	MongoAdapter := database.NewAdapter(MongoURI)
 	MongoAdapter.MakeConnection()
 
-	app := applicationAPI.New(socketServerAdapter, MongoAdapter)
+	//Payments
+	PaymentsAdapter := payments.NewAdapter(RazorpayAPIKey, RazorpayKeySecret)
+
+	app := applicationAPI.New(socketServerAdapter, MongoAdapter, PaymentsAdapter)
 	messageQueueAdapter := MessageQueue.NewAdapter(RabbitMQ_URL, app)
 	go messageQueueAdapter.MakeConnection()
 

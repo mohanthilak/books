@@ -19,9 +19,11 @@ import (
 type RouteHandlerType func(w http.ResponseWriter, r *http.Request) error
 
 type Adapter struct {
-	router *mux.Router
-	addr   string
-	app    ports.ApplicationInterface
+	addr               string
+	router             *mux.Router
+	razorPayRouter     *mux.Router
+	notificationRouter *mux.Router
+	app                ports.ApplicationInterface
 }
 
 func NewAdapter(router *mux.Router, addr string, app ports.ApplicationInterface) httpserver.HttpServerInterface {
@@ -33,20 +35,28 @@ func NewAdapter(router *mux.Router, addr string, app ports.ApplicationInterface)
 }
 
 func (adpt *Adapter) initiateRoutes() {
+
+	//Testing Route
 	adpt.router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusAccepted)
 		w.Header().Add("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]bool{"success": true})
 	})
-	adpt.router.HandleFunc("/{uid}", adpt.CreateHandler(adpt.GetUserNotifications)).Methods("GET")
+
+	adpt.razorPayRouter = adpt.router.PathPrefix("/razorpay").Subrouter()
+	adpt.razorPayRouter.HandleFunc("/initiate-transaction", adpt.CreateHandler(adpt.InitiateTransaction)).Methods("POST")
+
+	adpt.notificationRouter = adpt.router.PathPrefix("/notification").Subrouter()
+	adpt.notificationRouter.HandleFunc("/{uid}", adpt.CreateHandler(adpt.GetUserNotifications)).Methods("GET")
+
 }
 
 func (adpt *Adapter) Start(rabbitMQCloseFunc func(), mongoDBCloseFunc func()) {
 	adpt.initiateRoutes()
 
 	server := http.Server{
-		Addr:         "127.0.0.1:" + adpt.addr,
-		Handler:      handlers.CORS(handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"}), handlers.AllowCredentials(), handlers.AllowedHeaders([]string{"X-Requested-With", "Authorization", "Content-Type"}), handlers.AllowedOrigins([]string{"http://localhost:3000", "http://localhost:4000"}))(adpt.router),
+		Addr:         "0.0.0.0:" + adpt.addr,
+		Handler:      handlers.CORS(handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"}), handlers.AllowCredentials(), handlers.AllowedHeaders([]string{"X-Requested-With", "Authorization", "Content-Type"}), handlers.AllowedOrigins([]string{"http://localhost:3000", "http://localhost:4000", "http://localhost:4001"}))(adpt.router),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
@@ -86,6 +96,7 @@ func (A *Adapter) CreateHandler(controller RouteHandlerType) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		//call the controller
 		if err := controller(w, r); err != nil {
+			log.Println(err)
 			clientError, ok := err.(*HttpErrorStruct)
 			if !ok {
 				A.WriteJSONResponse(w, 500, "server-error", nil)

@@ -45,4 +45,5 @@ require (
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/rabbitmq/amqp091-go v1.8.1 // indirect
+	github.com/razorpay/razorpay-go v1.3.1
 )

@@ -1,5 +1,6 @@
 import { DocumentType, getModelForClass, modelOptions, pre, prop,Ref, Severity, ReturnModelType } from "@typegoose/typegoose";
 import bcrypt from "bcrypt";
+import { Wallet } from "./Wallet";
 // import {Library} from "./library"
 
 export class Location {
