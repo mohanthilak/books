@@ -3,3 +3,5 @@ node_modules
 .dev.env
 .env
 request.http
+.npm
+docker-dev.env

@@ -1,12 +1,14 @@
-FROM node:alpine
+FROM node:19.6-alpine
 
-WORKDIR /app/library
+WORKDIR /usr/app
 
 COPY package*.json .
 
-RUN npm ci
+RUN --mount=type=cache,target=/usr/app/.npm \
+    npm set cache /usr/app/.npm && \
+    npm ci 
 
-COPY . .
+COPY --chown=node:node ./src .
 
 EXPOSE 4002
 

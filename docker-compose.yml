@@ -2,31 +2,35 @@ version: '3.9'
 services:
 
   nosql-db:
-    image: mongo
-    container_name: nosql-db
-    ports:
-      - "2717:27107"
+    image: mongo:latest
+    container_name: "mongo-db-container"
     volumes:
-      - mongo_db:/data/db
+      - shared_database:/data/db
+    ports:
+      - 27017:27017
 
   redis:
     image: redis
     container_name: redis
     ports:
-      - "6379:6379"
+      - 6379:6379
     command: redis-server
 
   library:
     build:
       dockerfile: Dockerfile
       context: ./library
-    container_name: library
+    container_name: library-service
     ports:
-      - "4002:4002"
+      - 4002:4002
     environment:
-      NODE_ENV: prod
+      NODE_ENV: docker-dev
     volumes:
-      - ./library:/app/library
+      - type: bind
+        source: ./library
+        target: /usr/app
+      - type: volume
+        target: /usr/app/node_modules
     restart: always
     depends_on:
       - nosql-db
@@ -36,14 +40,17 @@ services:
     build:
       dockerfile: Dockerfile
       context: ./user
-    container_name: user
+    container_name: user-service
     ports:
-      - "4001:4001"
+      - 4001:4001
     environment:
-      NODE_ENV: prod
+      NODE_ENV: docker-dev
     volumes:
-      - ./user:/app/user
-      - /app/user/node_modules
+      - type: bind
+        source: ./user
+        target: /usr/app
+      - type: volume
+        target: /usr/app/node_modules
     restart: always
     depends_on:
       - nosql-db
@@ -53,10 +60,33 @@ services:
       dockerfile: Dockerfile
       context: ./gateway
     ports:
-      - "4000:4000"
+      - 4000:4000
+    environment:
+      NODE_ENV: docker-dev
+    volumes:
+      - type: bind
+        source: ./gateway
+        target: /usr/app
+      - type: volume
+        target: /usr/app/node_modules
     depends_on:
       - library
       - user
 
+  notification-service:
+    build:
+      context: ./notification
+      dockerfile: Dockerfile
+    container_name: notification-service
+    environment:
+      - ENVIRONMENT=dockerDev
+    depends_on:
+      - nosql-db
+    ports:
+      - 8000:8000
+
+
 volumes:
-  mongo_db: {}
+  shared_database: {}
+networks:
+  books:

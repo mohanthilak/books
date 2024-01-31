@@ -2,7 +2,9 @@ import {config} from 'dotenv'
 
 console.log("NODE_ENV: ", process.env.NODE_ENV);
 
-if(process.env.NODE_ENV !== 'prod'){
+if(process.env.NODE_ENV === 'docker-dev'){
+    config({path: './docker-dev.env'})
+}else if(process.env.NODE_ENV !== 'prod'){
     config({path: './.dev.env'})
 }else{
     config({path: './.env'});

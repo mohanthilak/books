@@ -40,9 +40,10 @@ func (adpt *Adapter) CloseConnection() {
 }
 
 func (adpt *Adapter) MakeConnection() {
+	log.Println("connectionURL:", adpt.connectionURL)
 	connection, err := amqp.Dial(adpt.connectionURL)
 	if err != nil {
-		log.Fatal("Couldn't connect to message queue", err)
+		log.Println("Couldn't connect to message queue", err)
 	}
 	adpt.connection = connection
 	adpt.createChannel()

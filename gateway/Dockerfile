@@ -1,10 +1,12 @@
 FROM node:alpine
 
-WORKDIR /app/gateway
+WORKDIR /usr/app
 
 COPY package*.json .
 
-RUN npm ci
+RUN --mount=type=cache,target=/usr/app/.npm \
+    npm set cache /usr/app/.npm && \
+    npm ci 
 
 COPY . .
 

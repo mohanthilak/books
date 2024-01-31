@@ -2,9 +2,9 @@ const dotenv = require("dotenv");
 
 console.log("NODE_ENV:", process.env.NODE_ENV);
 
-if (process.env.NODE_ENV !== "prod") dotenv.config({ path: "./dev.env" });
-// else if (process.env.NODE_ENV !== "docker_dev")
-//   dotenv.config({ path: "./d.dev.env" });
+if (process.env.NODE_ENV === "docker-dev")
+  dotenv.config({ path: "./dev.docker.env" });
+else if (process.env.NODE_ENV !== "prod") dotenv.config({ path: "./dev.env" }); 
 else dotenv.config({ path: "./.env" });
 
 const PORT = process.env.PORT;

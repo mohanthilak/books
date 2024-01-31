@@ -3,10 +3,10 @@ import expressApp from "./expressApp";
 import {DBConnect} from "./database"
 import {PORT} from "./config"
 import { createClient } from 'redis';
-// export const redisClient = createClient({
-//     url: 'redis://redis:6379'
-//    });
-export const redisClient = createClient();
+export const redisClient = createClient({
+    url: 'redis://redis:6379'
+   });
+// export const redisClient = createClient();
 
 const startServer = async () =>{
     try{

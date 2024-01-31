@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"log"
+	"os"
 
 	httpserver "Notifications/internal/adapters/frameworks/left/httpServer"
 	MessageQueue "Notifications/internal/adapters/frameworks/left/messageQueue"
@@ -17,16 +18,27 @@ import (
 
 func main() {
 	// Setting Up Environment variables
-	viper.SetConfigFile(".env")
+	environment := os.Getenv("ENVIRONMENT")
+	log.Println("Environment: ", environment)
+
+	if environment == "dev" {
+		viper.SetConfigFile(".env")
+	} else if environment == "dockerDev" {
+		viper.SetConfigFile("dev.docker.env")
+	}
+
 	err := viper.ReadInConfig()
 	if err != nil {
 		log.Fatal("Unable to read ENV File", err)
 	}
+
 	RabbitMQ_URL := viper.Get("RABBITMQ_URL").(string)
 	DefaultPort := viper.Get("PORT").(string)
 	MongoURI := viper.Get("MONGO_URI").(string)
 	RazorpayAPIKey := viper.Get("RAZORPAY_API_KEY").(string)
 	RazorpayKeySecret := viper.Get("RAZORPAY_KEY_SECRET").(string)
+
+	log.Println("queue:", RabbitMQ_URL, " mongo:", MongoURI)
 
 	// Fetching the PORT NUMBER from the CLI
 	listenAddr := flag.String("port", DefaultPort, "the server address")
