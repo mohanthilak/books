@@ -23,7 +23,9 @@ jobs:
      - name: Checkout repository
        uses: actions/checkout@v2
        with:
-          path: notification
+          sparse-checkout: |
+            .github
+            notification
        
      - name: Set up Go
        uses: actions/setup-go@v4
