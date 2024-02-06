@@ -38,5 +38,5 @@ jobs:
           DBName: test
           
        run: |
-         ls
+         cd notification
          go test -v ./...
