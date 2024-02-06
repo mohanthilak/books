@@ -8,35 +8,33 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-env:
-      RabbitMQ_URL: 1
-      DefaultPort: 8000
-      MongoURI: mongodb://mongodb:27017/test
-      DBName: test
 
 jobs:
 
-  build:
+  test:
     runs-on: ubuntu-latest
     services:
       mongodb:
-          image: mongo
-          env:
-            MONGO_INITDB_DATABASE: test
-          options: >-
-            --health-cmd mongo
-            --health-interval 10s
-            --health-timeout 5s
-            --health-retries 5
-          ports:
-            - 27017:27017
+       image: mongo
+       ports:
+          - 27017:27017
+       options: --name mongodb
     steps:
-    - uses: actions/checkout@v3
-
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
+     - name: Checkout repository
+       uses: actions/checkout@v2
+       
+     - name: Set up Go
+       uses: actions/setup-go@v4
+       with:
         go-version: '1.20'
-
-    - name: Test
-      run: go test -v ./...
+        
+     - name: Run tests
+       env:
+          RabbitMQ_URL: amqps://xpzfimfo:r9awQJBvXonsgv7YtXAgolBly1BrlwIf@puffin.rmq2.cloudamqp.com/xpzfimfo
+          DefaultPort: 8000
+          MongoURI: mongodb://mongodb:27017/test
+          DBName: test
+          
+       run: |
+         cd notification
+         go test -v ./...
