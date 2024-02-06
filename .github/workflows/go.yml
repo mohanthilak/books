@@ -39,4 +39,5 @@ jobs:
           
        run: |
          cd notification
+         ls
          go test -v ./...
