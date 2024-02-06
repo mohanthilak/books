@@ -16,7 +16,6 @@ type Adapter struct {
 	client                 *mongo.Client
 	notificationCollection *mongo.Collection
 	DBName                 string
-	Str                    string
 }
 
 func NewAdapter(uri, dbName string) *Adapter {
