@@ -21,9 +21,11 @@ jobs:
        options: --name mongodb
     steps:
      - name: Checkout repository
-       uses: actions/checkout@v2
+       uses: actions/checkout@v4
        with:
-          path: notification
+          sparse-checkout: |
+            .github
+            notification
        
      - name: Set up Go
        uses: actions/setup-go@v4
@@ -38,6 +40,5 @@ jobs:
           DBName: test
           
        run: |
-         cd notification/
          ls
          go test -v ./...
