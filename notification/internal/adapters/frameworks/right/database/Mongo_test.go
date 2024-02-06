@@ -20,6 +20,8 @@ var notificationObject = &ports.NotifyLenderStruct{
 }
 
 func TestA_InsertBorrowReturnRequest(t *testing.T) {
+	t.Log("testing get insert request")
+
 	mongoAdapter.MakeConnection()
 	err := mongoAdapter.InsertBorrowReturnRequest(notificationObject)
 	if err != nil {
@@ -39,6 +41,8 @@ func TestA_GetUserDisplayNotifications(t *testing.T) {
 	})
 	mongoAdapter.MakeConnection()
 
+	t.Log("testing get request")
+
 	notifications, err := mongoAdapter.GetUserDisplayNotifications(notificationObject.Recipient)
 	if err != nil {
 		t.Fatal("failed to query the db: ", err)
@@ -55,4 +59,5 @@ func TestA_GetUserDisplayNotifications(t *testing.T) {
 	if notifications[0].Type != notificationObject.Type || notifications[0].Operation != notificationObject.Operation || notifications[0].FromService != notificationObject.FromService || notifications[0].Message != notificationObject.Message || notifications[0].Recipient != notificationObject.Recipient || notifications[0].RelatedUser != notificationObject.RelatedUser || notifications[0].RequestID != notificationObject.RequestID || notifications[0].Timestamp != notificationObject.Timestamp || notifications[0].Display != notificationObject.Display {
 		t.Error("original document and stored document do not match: ", notificationObject, "  ", notifications[0])
 	}
+	t.Fail()
 }

@@ -26,7 +26,6 @@ func (A *Adapter) GetUserDisplayNotifications(userID string) ([]ports.NotifyLend
 	if err != nil {
 		log.Println("error while fetching user notifications form the DB", err)
 	}
-	log.Println("\n cursor:", cursor)
 	var result []ports.NotifyLenderStruct
 	if err = cursor.All(context.TODO(), &result); err != nil {
 		log.Println("error while converting mongo notifications cursor to struct array elements", err)
