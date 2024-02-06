@@ -59,5 +59,4 @@ func TestA_GetUserDisplayNotifications(t *testing.T) {
 	if notifications[0].Type != notificationObject.Type || notifications[0].Operation != notificationObject.Operation || notifications[0].FromService != notificationObject.FromService || notifications[0].Message != notificationObject.Message || notifications[0].Recipient != notificationObject.Recipient || notifications[0].RelatedUser != notificationObject.RelatedUser || notifications[0].RequestID != notificationObject.RequestID || notifications[0].Timestamp != notificationObject.Timestamp || notifications[0].Display != notificationObject.Display {
 		t.Error("original document and stored document do not match: ", notificationObject, "  ", notifications[0])
 	}
-	t.Fail()
 }
