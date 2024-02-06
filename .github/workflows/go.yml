@@ -38,4 +38,6 @@ jobs:
           MongoURI: mongodb://mongodb:27017/test
           DBName: test
           
-       run: go test -v ./notification/
+       run: |
+         cd notification
+         go test -v ./...
