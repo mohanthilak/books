@@ -1,0 +1,71 @@
+version: '3.9'
+services:
+
+  # nosql-db:
+  #   image: mongo:latest
+  #   container_name: "mongo-db-container"
+  #   volumes:
+  #     - shared_database:/data/db
+  #   ports:
+  #     - 27017:27017
+
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - 6379:6379
+    command: redis-server
+
+  library:
+    build:
+      dockerfile: prod.Dockerfile
+      context: ./library
+    container_name: library-service
+    ports:
+      - 4002:4002
+    environment:
+      NODE_ENV: docker-dev
+    restart: always
+    depends_on:
+      - redis
+      # - nosql-db
+
+  user:
+    build:
+      dockerfile: prod.Dockerfile
+      context: ./user
+    container_name: user-service
+    ports:
+      - 4001:4001
+    environment:
+      NODE_ENV: docker-dev
+    restart: always
+    # depends_on:
+    #   - nosql-db
+
+  gateway:
+    build:
+      dockerfile: prod.Dockerfile
+      context: ./gateway
+    ports:
+      - 4000:4000
+    environment:
+      NODE_ENV: docker-dev
+    depends_on:
+      - library
+      - user
+
+  notification-service:
+    build:
+      context: ./notification
+      dockerfile: Dockerfile
+    container_name: notification-service
+    environment:
+      - ENVIRONMENT=dockerDev
+    # depends_on:
+    #   - nosql-db
+    ports:
+      - 8000:8000
+
+networks:
+  books:

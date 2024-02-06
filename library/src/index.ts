@@ -3,10 +3,14 @@ import expressApp from "./expressApp";
 import {DBConnect} from "./database"
 import {PORT} from "./config"
 import { createClient } from 'redis';
-export const redisClient = createClient({
-    url: 'redis://redis:6379'
-   });
-// export const redisClient = createClient();
+export let redisClient:any;
+if(process.env.NODE_ENV === 'docker-dev'){
+    redisClient = createClient({
+        url: 'redis://redis:6379'
+    });
+}else{
+    redisClient = createClient();
+}
 
 const startServer = async () =>{
     try{
@@ -20,7 +24,7 @@ const startServer = async () =>{
             console.log("redis connected")
         })
 
-        redisClient.on("error", (err)=>{
+        redisClient.on("error", (err: any)=>{
             console.log("redis error", err)
         })
 
@@ -64,7 +68,7 @@ async function connectRedis(){
         console.log("redis connected")
     })
 
-    redisClient.on("error", (err)=>{
+    redisClient.on("error", (err: any)=>{
         console.log("redis error", err)
     })
 

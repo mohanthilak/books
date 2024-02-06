@@ -22,6 +22,9 @@ export const CLOUDINARY_SECRET = <string>process.env.CLOUDINARY_SECRET
 export const CLOUDINARY_KEY = <string>process.env.CLOUDINARY_KEY
 export const CLOUDINARY_CLOUD_NAME = <string>process.env.CLOUDINARY_CLOUD_NAME
 
+export const NOTIFICATION_SERVICE_URL = <string>process.env.NOTIFICATION_SERVICE_URL
+export const USER_SERVICE_URL = <string>process.env.USER_SERVICE_URL
+
 export const COMMON_EXCHANGE = "COMMON_EXCHANGE";
 export const USER_EXCHANGE = "USER_EXCHANGE";
 export const LIBRARY_EXCHANGE = "LIBRARY_EXCHANGE";
@@ -32,6 +35,7 @@ export const LIBRARY_BINDING_KEY = "LIBRARY_BINDING_KEY";
 export const USER_BINDING_KEY = 'USER_BINDING_KEY';
 export const COMMON_BINDING_KEY = 'COMMAN_BINDIN_KEY';
 export const NOTIFICATION_BINDING_KEY = 'NOTIFICATION';
+
 
 export const QUEUE_NAME = 'Library_Queue';
 

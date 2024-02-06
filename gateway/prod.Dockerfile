@@ -1,4 +1,4 @@
-FROM node:19.6-alpine
+FROM node:alpine
 
 WORKDIR /usr/app
 
@@ -8,10 +8,8 @@ RUN --mount=type=cache,target=/usr/app/.npm \
     npm set cache /usr/app/.npm && \
     npm ci 
 
-USER node
+COPY . .
 
-COPY --chown=node:node ./src .
+EXPOSE 4000
 
-EXPOSE 4002
-
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "start"]

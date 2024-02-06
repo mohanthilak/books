@@ -35,6 +35,7 @@ func main() {
 	RabbitMQ_URL := viper.Get("RABBITMQ_URL").(string)
 	DefaultPort := viper.Get("PORT").(string)
 	MongoURI := viper.Get("MONGO_URI").(string)
+	DBName := viper.Get("DB_NAME").(string)
 	RazorpayAPIKey := viper.Get("RAZORPAY_API_KEY").(string)
 	RazorpayKeySecret := viper.Get("RAZORPAY_KEY_SECRET").(string)
 
@@ -49,7 +50,7 @@ func main() {
 	socketServerAdapter.Start()
 
 	//MongoDB
-	MongoAdapter := database.NewAdapter(MongoURI)
+	MongoAdapter := database.NewAdapter(MongoURI, DBName)
 	MongoAdapter.MakeConnection()
 
 	//Payments

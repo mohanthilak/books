@@ -4,7 +4,7 @@ import { BooksRepository, LibraryRepository } from "../database";
 import { Book, BorrowRequest } from "../database/Models/Book";
 import { AddBooksAPIInterface, RequestBorrowBookInterface } from "../dto";
 import axios from "axios";
-
+import { USER_SERVICE_URL } from "../config";
 
 
 class BooksService{
@@ -57,7 +57,7 @@ class BooksService{
             let borroweres = bookData.data.borrowRequest as BorrowRequest[]
             let ids = borroweres.map(e=>e.user)
             let hydratedBorroweres:any;
-            await axios.post("http://localhost:4001/internal/get-users-with-ids",{ids}).then(res=>{
+            await axios.post(`${USER_SERVICE_URL}/internal/get-users-with-ids`,{ids}).then(res=>{
                 if(res.data.success){
                     hydratedBorroweres = res.data.data;
                     hydratedBorroweres.forEach((el: any) => {
@@ -99,7 +99,7 @@ class BooksService{
             const priceOfBorrowing = BookDetails.data?.priceOfBorrowing as number;
             
             let response
-            await axios.get(`http://localhost:4001/wallet/internal/${uid}`).then(res=>{
+            await axios.get(`${USER_SERVICE_URL}/wallet/internal/${uid}`).then(res=>{
                 const {data} = res.data;
                 if(!data) return res.data
                 const deposit = data.amount;

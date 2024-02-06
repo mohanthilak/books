@@ -16,6 +16,9 @@ export const ACCESS_TOKEN_SECRET = <string>process.env.ACCESS_TOKEN_SECRET;
 export const REFRESH_TOKEN_SECRET = <string>process.env.REFRESH_TOKEN_SECRET;
 export const MESSAGE_BROKER_URL = <string>process.env.MESSAGE_BROKER_URL;
 
+export const NOTIFICATION_SERVICE_URL = <string>process.env.NOTIFICATION_SERVICE_URL;
+export const LIBRARY_SERVICE_URL = <string>process.env.LIBRARY_SERVICE_URL;
+
 export const COMMON_EXCHANGE = "COMMON_EXCHANGE";
 export const USER_EXCHANGE = "USER_EXCHANGE";
 export const LIBRARY_EXCHANGE = "LIBRARY_EXCHANGE";

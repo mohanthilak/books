@@ -15,10 +15,11 @@ type Adapter struct {
 	mongoURI               string
 	client                 *mongo.Client
 	notificationCollection *mongo.Collection
+	DBName                 string
 }
 
-func NewAdapter(uri string) *Adapter {
-	return &Adapter{mongoURI: uri}
+func NewAdapter(uri, dbName string) *Adapter {
+	return &Adapter{mongoURI: uri, DBName: dbName}
 }
 
 func (A *Adapter) MakeConnection() {
@@ -28,7 +29,7 @@ func (A *Adapter) MakeConnection() {
 	}
 	A.client = client
 
-	A.notificationCollection = A.client.Database("BookAppNotification").Collection("LibraryNotification")
+	A.notificationCollection = A.client.Database(A.DBName).Collection("LibraryNotification")
 }
 
 func askDeleteDB() bool {

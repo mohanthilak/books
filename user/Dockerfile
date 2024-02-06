@@ -8,6 +8,8 @@ RUN --mount=type=cache,target=/usr/app/.npm \
     npm set cache /usr/app/.npm && \
     npm ci 
 
+USER node
+
 COPY --chown=node:node ./src .
 
 EXPOSE 4001

@@ -1,6 +1,7 @@
 
 import {TransactionRepo} from "../database"
 import axios from "axios";
+import {NOTIFICATION_SERVICE_URL} from "../config"
 class TransactionService{
     private readonly TransactionRepository;
     constructor(TransactionRepository: TransactionRepo){
@@ -14,7 +15,7 @@ class TransactionService{
             let paymentsData = null;
 
             if(repoData.success){
-                paymentsData = await axios.post("http://localhost:4000/notification/razorpay/initiate-transaction", {
+                paymentsData = await axios.post(`${NOTIFICATION_SERVICE_URL}/razorpay/initiate-transaction`, {
                     amount: 5000,
                     receipt: repoData.data?._id,
                     operation,
