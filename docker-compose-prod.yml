@@ -57,7 +57,7 @@ services:
 
   notification-service:
     build:
-      context: ./notification
+      context: ./Notification
       dockerfile: Dockerfile
     container_name: notification-service
     environment:

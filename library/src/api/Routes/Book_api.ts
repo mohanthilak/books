@@ -123,8 +123,12 @@ export const BooksAPI = (app:Application, channel: Channel, service: ServiceDepe
         } catch (e) {
             console.log("Error while updating request status:", e);
             return res.status(500).json({success: false, data: null, error: e});
-        }
-        
+        }  
+    })
+    app.get("/book/notification-queue-test/:offset", (req:Request, res:Response)=>{
+        const {offset} = req.params;
+        service.booksService.SendDummyQueueDataToNotificationService(parseInt(offset), channel)
+        return res.json({success: true, data: null, error: null});
     })
 }
 

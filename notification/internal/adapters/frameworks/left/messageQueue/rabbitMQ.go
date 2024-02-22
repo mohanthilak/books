@@ -137,20 +137,9 @@ func (adpt *Adapter) consumeMessage() error {
 	}
 	forever := make(chan bool)
 	go func() {
+		pool := NewPool(10, adpt)
 		for d := range msgs {
-			fmt.Printf("\n")
-			log.Printf("Recieved Message: %s\n", d.Body)
-			if ans, err := adpt.routeMessages(d.Body); !ans {
-				log.Println("unable to handle message", err)
-				if err := d.Ack(false); err != nil {
-					log.Println("Unable to Acknowledge Messages from RabbitMQ", err)
-				}
-			} else {
-				err := d.Ack(true)
-				if err != nil {
-					log.Println("Unable to Acknowledge Messages from RabbitMQ", err)
-				}
-			}
+			pool.IngressChan <- d
 		}
 	}()
 

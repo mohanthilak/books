@@ -26,6 +26,7 @@ func main() {
 	} else if environment == "dockerDev" {
 		viper.SetConfigFile("dev.docker.env")
 	}
+
 	var RabbitMQ_URL, DefaultPort, MongoURI, DBName string
 	if environment == "github" {
 		RabbitMQ_URL = os.Getenv("RabbitMQ_URL")

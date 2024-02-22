@@ -141,6 +141,13 @@ class BooksService{
     async IssueBook({requestID, issuedTo, bookID}: {requestID:string, issuedTo:string, bookID: string}){
         return this.BooksRepo.IssueBook({requestID, issuedTo, bookID});
     }
+
+
+    async SendDummyQueueDataToNotificationService(offset: number, channel: Channel){
+        for (let i = 0; i < offset; i++) {
+            channel.publish(NOTIFICATION_EXCHANGE, NOTIFICATION_BINDING_KEY, Buffer.from(JSON.stringify({fromService: "library", operation: "Test Receiving"})))
+        }
+    }
 }
 
 export { BooksService };
