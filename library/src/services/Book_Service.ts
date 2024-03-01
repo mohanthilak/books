@@ -145,7 +145,13 @@ class BooksService{
 
     async SendDummyQueueDataToNotificationService(offset: number, channel: Channel){
         for (let i = 0; i < offset; i++) {
-            channel.publish(NOTIFICATION_EXCHANGE, NOTIFICATION_BINDING_KEY, Buffer.from(JSON.stringify({fromService: "library", operation: "Test Receiving"})))
+            channel.publish(NOTIFICATION_EXCHANGE, NOTIFICATION_BINDING_KEY, Buffer.from(JSON.stringify({fromService: "library", operation: "Test Receiving"})), {priority:1})
+            // channel.publish(NOTIFICATION_EXCHANGE, NOTIFICATION_BINDING_KEY, Buffer.from(JSON.stringify({fromService: "library", operation: "Test Receiving High Priority Message"})), {priority: 3})
+
+        }
+        for(let i = 0; i<offset; i++){
+            channel.publish(NOTIFICATION_EXCHANGE, NOTIFICATION_BINDING_KEY, Buffer.from(JSON.stringify({fromService: "library", operation: "Test Receiving High Priority Message"})), {priority: 3})
+            
         }
     }
 }

@@ -56,6 +56,7 @@ func (adpt *Adapter) createChannel() {
 	if err != nil {
 		log.Println(err, "Failed to open a channel")
 	}
+	ch.Qos(5, 0, false)
 	adpt.channel = ch
 }
 
@@ -92,13 +93,15 @@ func (adpt *Adapter) PublishMessage(exchange, routingKey, data string) error {
 }
 
 func (adpt *Adapter) declareQueue() {
+	args := make(amqp.Table)
+	args["x-max-priority"] = int64(3)
 	q, err := adpt.channel.QueueDeclare(
 		"NOTIFICATION_QUEUE", // name
 		true,                 // durable
 		false,                // delete when unused
 		false,                // exclusive
 		false,                // no-wait
-		nil,                  // arguments
+		args,                 // arguments
 	)
 	if err != nil {
 		log.Fatal("Failed to declare a queue", err)
@@ -123,6 +126,9 @@ func (adpt *Adapter) consumeMessage() error {
 	adpt.declareQueue()
 	adpt.bindQueue()
 
+	args := make(amqp.Table)
+	args["x-max-priority"] = int64(3)
+
 	msgs, err := adpt.channel.Consume(
 		adpt.queue.Name,        // queue
 		"NOTIFICATION_SERVICE", // consumer
@@ -130,12 +136,14 @@ func (adpt *Adapter) consumeMessage() error {
 		false,                  // exclusive
 		false,                  // no local
 		false,                  // no wait
-		nil,                    // args
+		args,                   // args
 	)
 	if err != nil {
 		log.Fatal("error while consuming messages", err)
 	}
+
 	forever := make(chan bool)
+
 	go func() {
 		pool := NewPool(10, adpt)
 		for d := range msgs {
