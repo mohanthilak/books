@@ -4,7 +4,7 @@ console.log("NODE_ENV: ", process.env.NODE_ENV);
 
 if(process.env.NODE_ENV === 'docker-dev'){
     config({path: './docker-dev.env'})
-}else if(process.env.NODE_ENV !== 'prod'){
+}else if(process.env.NODE_ENV !== 'production'){
     config({path: './.dev.env'})
 }else{
     config({path: './.env'});
@@ -24,6 +24,8 @@ export const CLOUDINARY_CLOUD_NAME = <string>process.env.CLOUDINARY_CLOUD_NAME
 
 export const NOTIFICATION_SERVICE_URL = <string>process.env.NOTIFICATION_SERVICE_URL
 export const USER_SERVICE_URL = <string>process.env.USER_SERVICE_URL
+export const REDIS_URL= <string>process.env.REDIS_URL;
+export const REDIS_PASSWORD = <string>process.env.REDIS_PASSWORD;
 
 export const COMMON_EXCHANGE = "COMMON_EXCHANGE";
 export const USER_EXCHANGE = "USER_EXCHANGE";

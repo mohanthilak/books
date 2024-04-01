@@ -1,16 +1,9 @@
 import express, {Application} from "express";
 import expressApp from "./expressApp";
 import {DBConnect} from "./database"
-import {PORT} from "./config"
+import {PORT, REDIS_PASSWORD, REDIS_URL} from "./config"
 import { createClient } from 'redis';
 export let redisClient:any;
-if(process.env.NODE_ENV === 'docker-dev'){
-    redisClient = createClient({
-        url: 'redis://redis:6379'
-    });
-}else{
-    redisClient = createClient();
-}
 
 const startServer = async () =>{
     try{
@@ -20,21 +13,21 @@ const startServer = async () =>{
     
         await connectRedis()
 
-        redisClient.on("connect", ()=>{
-            console.log("redis connected")
-        })
+        // redisClient.on("connect", ()=>{
+        //     console.log("redis connected")
+        // })
 
-        redisClient.on("error", (err: any)=>{
-            console.log("redis error", err)
-        })
+        // redisClient.on("error", (err: any)=>{
+        //     console.log("redis error", err)
+        // })
 
         expressApp(app);
         
 
-        app.listen(PORT, ()=> console.log(`ervin at port: ${PORT}`))
+        app.listen(PORT, ()=> console.log(`Servin at port: ${PORT}`))
 
     }catch(e){
-        console.log("!!!!!!!!!!!!!!!", e)
+        console.log("Could not starr the server")
     }    
 }
 
@@ -62,7 +55,24 @@ async function connectRedis(){
     //     }
         
     // }
-    await redisClient.connect()
+    try{
+        if(process.env.NODE_ENV === 'docker-dev'){
+            redisClient = createClient({
+                url: 'redis://redis:6379'
+            });
+        }else if(process.env.NODE_ENV == "production"){
+            redisClient = await createClient({
+                url: "redis://"+REDIS_URL,
+                password: REDIS_PASSWORD
+            })
+        }else{
+            redisClient = await createClient();
+        }
+        await redisClient.connect()
+    }catch(e){
+        console.log("Could Not connect to Redis:", e);
+        throw e;
+    }
 
     redisClient.on("connect", ()=>{
         console.log("redis connected")

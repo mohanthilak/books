@@ -13,7 +13,7 @@ Content-Type: application/json
 GET http://localhost:4000/user/trial HTTP/1.1
 
 ###
-Post http://localhost:4000/user/signup
+Post http://localhost:4001/signup
 Content-Type: application/json
 
 {
@@ -21,6 +21,15 @@ Content-Type: application/json
     "password":"asd"
 }
 
+###
+
+POST https://zipperapi.24-7.ro/user/signup
+Content-Type: application/json
+
+{
+    "email": "adad",
+    "password":"asd"
+}
 ###
 POST http://localhost:4000/user/renewtoken HTTP/1.1
 Content-Type: application/json
@@ -59,6 +68,11 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkYWFkY
 GET http://localhost:4000/book/book/menupage/77.608116/13.036693
 
 ###
+
+GET https://zipperapi.24-7.ro/book/book/menupage/77.608116/13.036693
+
+
+###
 GET http://localhost:4000/book/book/search/haha/77.608116/13.036693
 
 ###
@@ -77,6 +91,8 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkYWFkY
 
 ###
 GET http://localhost:4000/book/book/all
+###
+GET https://zipperapi.24-7.ro/book/all
 
 ###
 POST http://localhost:4000/book/book/add/65a36563aaa749d6cf771c1c HTTP/1.1
