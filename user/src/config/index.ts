@@ -4,7 +4,7 @@ console.log("NODE_ENV: ", process.env.NODE_ENV);
 
 if(process.env.NODE_ENV === 'docker-dev'){
     config({path: './docker-dev.env'})
-}else if(process.env.NODE_ENV !== 'prod'){
+}else if(process.env.NODE_ENV !== 'production'){
     config({path: './.dev.env'})
 }else{
     config({path: './.env'});

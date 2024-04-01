@@ -56,7 +56,7 @@ export const WalletAPI = (app: Application, services: ServiceDependency)=>{
             // services.WalletService 
             if(transactionData.success && transactionData.data){
                 // services.WalletService 
-                const walletData = await services.WalletService.AddMoneyToUserWallet({owner: req.user._id, transactionID: transactionData.data?._id, amount: transactionData?.data?.amount as number});
+                const walletData = await services.WalletService.AddMoneyToUserWallet({owner: req.user._id, transactionID: transactionData.data?._id as unknown as string, amount: transactionData?.data?.amount as number});
                 return res.status(200).json(walletData);
             }else{
                 return res.status(500).json(transactionData)

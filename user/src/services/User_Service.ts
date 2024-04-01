@@ -18,7 +18,9 @@ class UserService{
 
             if(data.success && data.data){
                 const user = data.data;
-                const {accessToken, refreshToken} = await this.CreateAuthTokens({email: user.email, _id: user._id})
+                let {_id} = user;
+                const id = _id as unknown as string; 
+                const {accessToken, refreshToken} = await this.CreateAuthTokens({email: user.email, _id: id})
                 return {success: true, data: {uid: user._id,accessToken, refreshToken, verificationStatus:user.verificationStatus, name: user.name, profilePicture: user.profilePicture},  message: "User Created"};
             }
 
@@ -33,8 +35,8 @@ class UserService{
         try{
             const data = await this.repository.GetPasswordWithEmailAndID(userInputs)
             if(data.data){
-                const payload = {email: userInputs.email, _id: data.data._id}
-                const {accessToken, refreshToken} = await this.CreateAuthTokens(payload);
+                const payload = {email: userInputs.email, _id: data.data._id as unknown as string}
+                const {accessToken, refreshToken} = this.CreateAuthTokens(payload);
                 return {success: true, err: null, data: {accessToken, refreshToken, uid: data.data._id}}; 
             }else return {success: false, err: data.err, data:null};
         }catch(e){
@@ -104,7 +106,7 @@ class UserService{
     }
     
     
-    private async CreateAuthTokens({email, _id}: userAuthDataInterface): Promise<AuthTokens> {
+    private CreateAuthTokens({email, _id}: {email: string,_id: string}): {accessToken: string,refreshToken: string} {
         const accessToken = sign({email, _id}, ACCESS_TOKEN_SECRET, { expiresIn: "30m" });
         const refreshToken = sign({email, _id}, REFRESH_TOKEN_SECRET, {expiresIn: "1d"});
         this.repository.AddRefreshToken(refreshToken, _id);
@@ -121,12 +123,12 @@ class UserService{
             
                 if(userExists.success){
                     if(userExists.data){
-                        const {accessToken, refreshToken} = await this.CreateAuthTokens({email, _id: userExists.data._id});
+                        const {accessToken, refreshToken} = await this.CreateAuthTokens({email, _id: userExists.data._id as unknown as string});
                         return {success: true,data: {uid: userExists.data._id, verificationStatus: userExists.data.verificationStatus, accessToken, refreshToken, name, profilePicture: picture}, error: null}
                     }
                     const data = await this.repository.GoogleSignUp({name, googleID: sub, email, profilePicture: picture});
                     if(data.success){
-                        const {accessToken, refreshToken} = await this.CreateAuthTokens({email, _id: data.data?._id});
+                        const {accessToken, refreshToken} = await this.CreateAuthTokens({email, _id: data.data?._id as unknown as string});
                         // console.log("\n\n\n!@!@!@!@!",{uid: data.data?._id, accessToken, refreshToken, ...data.data})
                         return {success: true, data: {uid: data.data?._id, accessToken, refreshToken, name,verificationStatus: data.data?.verificationStatus, profilePicture: picture}, error: null}
                     }

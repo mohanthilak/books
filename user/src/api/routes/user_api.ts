@@ -130,7 +130,7 @@ export const UserAPI = (app: Application, channel: Channel, service: UserService
     app.post("/logout",auth, async(req: Request, res: Response) =>{
         const cookies = req.cookies;
         if (!cookies?.rt) return res.sendStatus(403);
-        const {rt, uid}: {rt: string, uid: string} = cookies;
+        const {rt, uid} = cookies;
         const {accessToken} = req.body; 
         const data = await service.DeleteRefreshToken(rt, uid);
         if(!data.error){
