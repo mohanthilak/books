@@ -21,7 +21,7 @@ export default async (app: Application )=>  {
     app.use(cookieParser())
 
     app.use(cors({
-        origin: ['http://localhost:3000'],
+        origin: ['http://localhost:3000', "https://zipper-frontend.vercel.app"],
         methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
         credentials: true,
     }));
@@ -29,6 +29,10 @@ export default async (app: Application )=>  {
     app.use((req, res, next)=>{
         console.log("\n",req.url);
         next();
+    })
+
+    app.get("/", (req,res)=>{
+        res.status(200).send("<h1>Welcome to Zipper User API</h1>")
     })
 
     let channel: Channel;

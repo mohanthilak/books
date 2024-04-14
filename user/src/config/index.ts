@@ -1,14 +1,33 @@
 import {config} from 'dotenv'
+import path from 'path';
 
 console.log("NODE_ENV: ", process.env.NODE_ENV);
 
-if(process.env.NODE_ENV === 'docker-dev'){
-    config({path: './docker-dev.env'})
-}else if(process.env.NODE_ENV !== 'production'){
-    config({path: './.dev.env'})
-}else{
-    config({path: './.env'});
+
+switch (process.env.NODE_ENV) {
+    case 'docker-dev':
+        config({path: './docker-dev.env'})    
+        break;
+    case 'production':
+        config({path: './.env'})
+        break;
+    case 'render':
+        config({path: "./render.env"});
+        break;
+    default:
+        config({path: './.env'})
+        break;
 }
+
+// if(process.env.NODE_ENV === 'docker-dev'){
+//     config({path: './docker-dev.env'})
+// }else if(process.env.NODE_ENV !== 'production'){
+//     config({path: './.dev.env'})
+// }else if(process.env.NODE_ENV !== 'reder'){
+//     config({path: './.render.env'})
+// }else{
+//     config({path: './.env'});
+// }
 
 export const PORT= <string>process.env.PORT;
 export const DBURL = <string>process.env.DBURL;

@@ -52,7 +52,7 @@ export const UserAPI = (app: Application, channel: Channel, service: UserService
         // PublishMessage(channel, NOTIFICATION_BINDING_KEY, JSON.stringify({fromService: "UserService", typeOfNotification:"SMS", body: {userId: "DAFADF", TimeIssued:new Date(), operation:"send_otp"}}), NOTIFICATION_EXCHANGE)
     })
 
-    app.post("/signup" ,async (req: Request, res: Response)=>{
+    app.post("/user/signup" ,async (req: Request, res: Response)=>{
         try{
             if(req.headers.logintype == "google"){
                 const {token}:{token:string} = req.body;
@@ -99,7 +99,7 @@ export const UserAPI = (app: Application, channel: Channel, service: UserService
     })
     
     
-    app.post("/signin", validateResources(createUserSchema), async(req:Request, res: Response)=>{
+    app.post("/user/signin", validateResources(createUserSchema), async(req:Request, res: Response)=>{
         try{
             if(req.headers.logintype == "google"){
                 const {token}:{token:string} = req.body;
@@ -127,7 +127,7 @@ export const UserAPI = (app: Application, channel: Channel, service: UserService
         }
     })
 
-    app.post("/logout",auth, async(req: Request, res: Response) =>{
+    app.post("/user/logout",auth, async(req: Request, res: Response) =>{
         const cookies = req.cookies;
         if (!cookies?.rt) return res.sendStatus(403);
         const {rt, uid} = cookies;
@@ -145,7 +145,7 @@ export const UserAPI = (app: Application, channel: Channel, service: UserService
     })
     
 
-    app.post("/renewtoken", async(req:Request, res:Response)=>{
+    app.post("/user/renewtoken", async(req:Request, res:Response)=>{
         const {refreshToken, uid}: {refreshToken:string, uid: string} = req.body;
         const data = await service.GenerateAccessToken(refreshToken, uid);
         if(data.data){
@@ -155,7 +155,7 @@ export const UserAPI = (app: Application, channel: Channel, service: UserService
         }
     })
     
-    app.get("/", auth, async (req:Request<{}, {}, GetUserDetailsInput>, res: Response)=>{
+    app.get("/user/", auth, async (req:Request<{}, {}, GetUserDetailsInput>, res: Response)=>{
         try{
             if(req.user){
                 const data = await service.GetUser(req.user)
@@ -170,7 +170,7 @@ export const UserAPI = (app: Application, channel: Channel, service: UserService
     })
 
     // /Sends a new access token after validating the refresh token
-    app.post("/refresh", async (req, res) => {
+    app.post("/user/refresh", async (req, res) => {
     try {
         const cookies = req.cookies;
         if (!cookies?.rt) return res.sendStatus(403);
@@ -184,7 +184,7 @@ export const UserAPI = (app: Application, channel: Channel, service: UserService
     }
     });
 
-    app.post("/update-loc", auth, async(req, res) =>{
+    app.post("/user/update-loc", auth, async(req, res) =>{
         try{
             const {latitude, longitude}:{latitude: number, longitude: number} = req.body;
             const data = await service.UpdateUserLocation({latitude, longitude, uid: req.user?._id as string});
@@ -195,7 +195,7 @@ export const UserAPI = (app: Application, channel: Channel, service: UserService
         }
     })
 
-    app.post("/update-name",auth, async(req, res) => {
+    app.post("/user/update-name",auth, async(req, res) => {
         try {
             const {firstName, lastName} = req.body;
             const data = await service.UpdateUserName({firstName, lastName, uid: req.user?._id as string});
@@ -208,7 +208,7 @@ export const UserAPI = (app: Application, channel: Channel, service: UserService
         }
     })
 
-    app.post("/update-phoneNumber", auth, async(req, res)=>{
+    app.post("/user/update-phoneNumber", auth, async(req, res)=>{
         try {
            const {phoneNumber}:{phoneNumber: number} = req.body;
            const data = await service.UpdateUserPhoneNumber({phoneNumber, uid: req.user?._id as string});
@@ -220,7 +220,7 @@ export const UserAPI = (app: Application, channel: Channel, service: UserService
         }
     })
 
-    app.post("/phone-verification", auth, async(req, res)=>{
+    app.post("/user/phone-verification", auth, async(req, res)=>{
         try {
             const {otp, phoneNumber}: {otp: number, phoneNumber: number} = req.body;
             console.log(typeof phoneNumber)
@@ -234,7 +234,7 @@ export const UserAPI = (app: Application, channel: Channel, service: UserService
     })
 
 
-    app.post("/internal/get-users-with-ids", async(req, res)=>{
+    app.post("/user/internal/get-users-with-ids", async(req, res)=>{
         try {
             const {ids}: {ids: string[]} = req.body;
             const data = await service.FindUsersWithIDs({ids})
