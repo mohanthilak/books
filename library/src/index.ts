@@ -60,7 +60,7 @@ async function connectRedis(){
             redisClient = createClient({
                 url: 'redis://redis:6379'
             });
-        }else if(process.env.NODE_ENV == "production"){
+        }else if(process.env.NODE_ENV == "production" || process.env.NODE_ENV == "render"){
             redisClient = await createClient({
                 url: "redis://"+REDIS_URL,
                 password: REDIS_PASSWORD

@@ -20,6 +20,9 @@ export default async (app: Application)=>{
         console.log("[",req.method, "],", req.url)
         next()
     })
+    app.get("/", (req, res)=>{
+        res.status(200).send("<h1>Welcome to Zipper-Libray</h1>")
+    })
     const channel = await CreateChannel();
     
     const booksRepository = new BooksRepository();
