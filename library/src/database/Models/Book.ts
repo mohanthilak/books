@@ -42,7 +42,7 @@ export class Book {
     about: string;
     
     @prop({type: ()=>Reviews})
-    Reviews: Ref<BorrowRequest>[];
+    Reviews: Ref<Reviews>[];
     
     @prop({type:()=>String, default: ["https://m.media-amazon.com/images/I/81caWwaOOKL._AC_UF894,1000_QL80_.jpg"]})
     photos: string[];

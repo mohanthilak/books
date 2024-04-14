@@ -11,5 +11,5 @@ start-library:
 	# gnome-terminal --working-directory=library -e "npm run dev"
 
 start-notification:
-	cd Notification && start go run cmd/main.go &
+	export ENVIRONMENT=dev && cd Notification && start go run main.go &
 	# gnome-terminal --working-directory=Notification -e "go run cmd/main.go"
