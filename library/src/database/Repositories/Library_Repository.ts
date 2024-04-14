@@ -131,7 +131,7 @@ class LibraryRepository{
                     $geoNear: {
                         near: {type:"Point", coordinates:[longitude,latitude]},
                         key: "location",
-                        maxDistance: 1000*1000,
+                        maxDistance: 1*1000,
                         distanceMultiplier: 1 / 1000,
                         distanceField: "dist.calculated",
                         spherical: true
