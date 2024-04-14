@@ -38,28 +38,25 @@ export class Book {
     @prop({type:()=> String, required: true})
     author: string;
 
-    @prop({type: ()=>String})
+    @prop({type: ()=>String, required:false})
     about: string;
     
-    @prop({type: ()=>Reviews})
-    Reviews: Ref<Reviews>[];
     
     @prop({type:()=>String, default: ["https://m.media-amazon.com/images/I/81caWwaOOKL._AC_UF894,1000_QL80_.jpg"]})
     photos: string[];
     
     @prop({ref:"Library", type: ()=> String, required: true})
     library: Ref<Library, string>;
-
+    
     @prop({type:()=> String,required: true})
     owner: string;
-
-
+    
     @prop({type:()=> Number,required: true})
     mrp: number;
-
+    
     @prop({type:()=> Number,required: true})
     priceOfBorrowing: number
-
+    
     @prop({type:()=> Boolean, default: false})
     isBorrowed: boolean
     
@@ -68,18 +65,21 @@ export class Book {
     
     @prop({type:()=> String})
     issuesTo: string
-
+    
     @prop({type:()=> String,default: undefined})
     lendTo: string
-
+    
     @prop({required: true})
     location: Location
-
+    
     @prop({type: ()=> String})
     previousOwners: string[];
     
     @prop({ref: ()=>BorrowRequest})
     borrowRequest: Ref<BorrowRequest>[]
+    
+    @prop({ref: ()=>Reviews})
+    Reviews: Ref<Reviews>[];
 }
 
 const BookModel = getModelForClass(Book);
